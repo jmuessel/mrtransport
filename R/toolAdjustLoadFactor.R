@@ -33,5 +33,19 @@ toolAdjustLoadFactor <- function(dt, completeData, TRACCScountries, filter) {
   dt[is.na(unit), unit := ifelse(univocalName %in% filter$trn_pass, "p/veh", "t/veh")]
   dt[is.na(variable), variable := "Load factor"]
 
+  #Reduce unrealistically high values
+  ISOcountriesMap <- system.file("extdata", "regionmappingISOto21to12.csv", package = "mrtransport", mustWork = TRUE)
+  ISOcountriesMap <- fread(ISOcountriesMap, skip = 0)
+
+  #dt[region %in% ISOcountriesMap[regionCode21 == "CHA"]$countryCode & univocalName %in% filter$trn_pass_road_LDV_4W, value := mean_value]
+
+
+  dt[, mean_value := mean(value, na.rm = TRUE), by = c("univocalName", "technology", "period")]
+  dt[region %in% c("IND", "AGO") & univocalName == "Large Car and SUV", value := mean_value]
+  dt[region %in% c(ISOcountriesMap[regionCode21 == "CAZ"]$countryCode) &
+                     univocalName %in% c("Truck (7_5t)"), value := mean_value]
+
+  dt[, mean_value := NULL]
+
   return(dt)
 }

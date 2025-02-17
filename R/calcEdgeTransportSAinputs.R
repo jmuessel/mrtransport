@@ -134,12 +134,10 @@ calcEdgeTransportSAinputs <- function(subtype, SSPscen = "SSP2", IEAharm = TRUE)
       # Include data adjustments: fill gaps and correct data if necessary based on projects, other sources and own
       # assumptions
       energyIntensity <- toolAdjustEnergyIntensity(energyIntensityRaw, countriesTRACCS, data$enIntPSI, filterEntries)
-
       # Harmonize energy intensity data in order to match IEA final energy values
       if (IEAharm == TRUE) {
         energyIntensity <- mrtransport::toolIEAharmonization(enIntensity = energyIntensity)
       }
-
       # Add energy intensity of zero for active modes
       activeModes <- completeDataSet[univocalName %in% c("Cycle", "Walk")]
       activeModes[, unit := "MJ/vehkm"][, variable := "Energy intensity"][, value := 0][, check := NULL]
@@ -171,6 +169,17 @@ calcEdgeTransportSAinputs <- function(subtype, SSPscen = "SSP2", IEAharm = TRUE)
       }
 
       quitteobj <- energyIntensity
+
+      #adjustment based on visual assessment during validation in 2025
+      #ISOcountriesMap <- system.file("extdata", "regionmappingISOto21to12.csv", package = "mrtransport", mustWork = TRUE)
+      #ISOcountriesMap <- fread(ISOcountriesMap, skip = 0)
+      #dt[, mean_value := mean(value, na.rm = TRUE), by = c("univocalName", "technology", "period")]
+      #dt[region %in% ISOcountriesMap[regionCode21 == "CAZ"]$countryCode & univocalName %in% c("Mini Car") & technology == "BEV", value := mean_value]
+      #dt[region %in% ISOcountriesMap[regionCode21 == "ECE"]$countryCode & univocalName %in% c("Compact Car") & technology == "Gases", value := mean_value]
+      #dt[, mean_value := NULL]
+
+      fwrite(quitteobj, "C:/Users/jaruschm/Downloads/mrTInput/Energy intensity/enInt.csv")
+
 
     },
     "annualMileage" = {
@@ -231,6 +240,8 @@ calcEdgeTransportSAinputs <- function(subtype, SSPscen = "SSP2", IEAharm = TRUE)
       }
 
       quitteobj <- annualMileage
+      fwrite(quitteobj, "C:/Users/jaruschm/Downloads/mrTInput/Annual mileage/annualMileage.csv")
+
     },
     "histESdemand" = {
       unit <- "billion (p|t)km/yr"
@@ -357,6 +368,8 @@ calcEdgeTransportSAinputs <- function(subtype, SSPscen = "SSP2", IEAharm = TRUE)
         stop("Load factor data includes NAs")
       }
       quitteobj <- loadFactor
+      fwrite(quitteobj, "C:/Users/jaruschm/Downloads/mrTInput/Load factor/LF.csv")
+
     },
     "CAPEXtrackedFleet" = {
       unit <- paste0(monUnit, "/veh")
@@ -449,6 +462,8 @@ calcEdgeTransportSAinputs <- function(subtype, SSPscen = "SSP2", IEAharm = TRUE)
       }
 
       quitteobj <- CAPEX
+      fwrite(quitteobj, "C:/Users/jaruschm/Downloads/mrTInput/Energy intensity/capex.csv")
+
     },
     "nonFuelOPEXtrackedFleet" = {
       unit <- paste0(monUnit, "/veh yr")
@@ -988,7 +1003,6 @@ calcEdgeTransportSAinputs <- function(subtype, SSPscen = "SSP2", IEAharm = TRUE)
   )
 
   x <- as.magpie(as.data.frame(quitteobj))
-
   return(list(
     x           = x,
     weight      = weight,
