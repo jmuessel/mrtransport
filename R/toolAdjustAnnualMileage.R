@@ -10,7 +10,8 @@
 #' @return a quitte object
 
 toolAdjustAnnualMileage <- function(dt, completeData, filter, ariadneAdjustments = TRUE) {
-  region <- value <- univocalName <- check <- unit <- variable <- annualMileage <- period <- technology <- . <- NULL
+  region <- value <- univocalName <- check <- unit <- variable <- annualMileage <- period <- technology <-
+    mean_value <- regionCode21 <- . <- NULL
 
   # 1: Adjustments made by Alois in consequence of the ARIADNE model intercomparison in 2022
   if (ariadneAdjustments) {
@@ -48,8 +49,10 @@ toolAdjustAnnualMileage <- function(dt, completeData, filter, ariadneAdjustments
   ISOcountriesMap <- system.file("extdata", "regionmappingISOto21to12.csv", package = "mrtransport", mustWork = TRUE)
   ISOcountriesMap <- fread(ISOcountriesMap, skip = 0)
   dt[, mean_value := mean(value, na.rm = TRUE), by = c("univocalName", "technology", "period")]
-  dt[region %in% ISOcountriesMap[regionCode21 == "CHA"]$countryCode & univocalName %in% filter$trn_pass_road_LDV_4W, value := mean_value]
-  dt[region %in% ISOcountriesMap[regionCode21 %in% c("EWN", "ENC", "UKI", "NES")]$countryCode & grepl("Bus", univocalName), value := mean_value]
+  dt[region %in% ISOcountriesMap[regionCode21 == "CHA"]$countryCode & univocalName %in% filter$trn_pass_road_LDV_4W,
+     value := mean_value]
+  dt[region %in% ISOcountriesMap[regionCode21 %in% c("EWN", "ENC", "UKI", "NES")]$countryCode &
+       grepl("Bus", univocalName), value := mean_value]
   dt[, mean_value := NULL]
 
   # b) Annual Mileage for Trucks is missing completely - insert assumptions made by Alois in 2022

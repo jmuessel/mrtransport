@@ -169,7 +169,6 @@ calcEdgeTransportSAinputs <- function(subtype, SSPscen = "SSP2", IEAharm = TRUE)
       }
 
       quitteobj <- energyIntensity
-      #fwrite(quitteobj, "C:/Users/jaruschm/Downloads/mrTInput/Energy intensity/enInt.csv")
 
 
     },
@@ -231,7 +230,6 @@ calcEdgeTransportSAinputs <- function(subtype, SSPscen = "SSP2", IEAharm = TRUE)
       }
 
       quitteobj <- annualMileage
-      #fwrite(quitteobj, "C:/Users/jaruschm/Downloads/mrTInput/Annual mileage/annualMileage.csv")
 
     },
     "histESdemand" = {
@@ -359,7 +357,6 @@ calcEdgeTransportSAinputs <- function(subtype, SSPscen = "SSP2", IEAharm = TRUE)
         stop("Load factor data includes NAs")
       }
       quitteobj <- loadFactor
-      #fwrite(quitteobj, "C:/Users/jaruschm/Downloads/mrTInput/Load factor/LF.csv")
 
     },
     "CAPEXtrackedFleet" = {
@@ -453,7 +450,6 @@ calcEdgeTransportSAinputs <- function(subtype, SSPscen = "SSP2", IEAharm = TRUE)
       }
 
       quitteobj <- CAPEX
-      #fwrite(quitteobj, "C:/Users/jaruschm/Downloads/mrTInput/Energy intensity/capex.csv")
 
     },
     "nonFuelOPEXtrackedFleet" = {
