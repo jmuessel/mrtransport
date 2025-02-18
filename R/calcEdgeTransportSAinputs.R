@@ -169,16 +169,7 @@ calcEdgeTransportSAinputs <- function(subtype, SSPscen = "SSP2", IEAharm = TRUE)
       }
 
       quitteobj <- energyIntensity
-
-      #adjustment based on visual assessment during validation in 2025
-      #ISOcountriesMap <- system.file("extdata", "regionmappingISOto21to12.csv", package = "mrtransport", mustWork = TRUE)
-      #ISOcountriesMap <- fread(ISOcountriesMap, skip = 0)
-      #dt[, mean_value := mean(value, na.rm = TRUE), by = c("univocalName", "technology", "period")]
-      #dt[region %in% ISOcountriesMap[regionCode21 == "CAZ"]$countryCode & univocalName %in% c("Mini Car") & technology == "BEV", value := mean_value]
-      #dt[region %in% ISOcountriesMap[regionCode21 == "ECE"]$countryCode & univocalName %in% c("Compact Car") & technology == "Gases", value := mean_value]
-      #dt[, mean_value := NULL]
-
-      fwrite(quitteobj, "C:/Users/jaruschm/Downloads/mrTInput/Energy intensity/enInt.csv")
+      #fwrite(quitteobj, "C:/Users/jaruschm/Downloads/mrTInput/Energy intensity/enInt.csv")
 
 
     },
@@ -240,7 +231,7 @@ calcEdgeTransportSAinputs <- function(subtype, SSPscen = "SSP2", IEAharm = TRUE)
       }
 
       quitteobj <- annualMileage
-      fwrite(quitteobj, "C:/Users/jaruschm/Downloads/mrTInput/Annual mileage/annualMileage.csv")
+      #fwrite(quitteobj, "C:/Users/jaruschm/Downloads/mrTInput/Annual mileage/annualMileage.csv")
 
     },
     "histESdemand" = {
@@ -368,7 +359,7 @@ calcEdgeTransportSAinputs <- function(subtype, SSPscen = "SSP2", IEAharm = TRUE)
         stop("Load factor data includes NAs")
       }
       quitteobj <- loadFactor
-      fwrite(quitteobj, "C:/Users/jaruschm/Downloads/mrTInput/Load factor/LF.csv")
+      #fwrite(quitteobj, "C:/Users/jaruschm/Downloads/mrTInput/Load factor/LF.csv")
 
     },
     "CAPEXtrackedFleet" = {
@@ -462,7 +453,7 @@ calcEdgeTransportSAinputs <- function(subtype, SSPscen = "SSP2", IEAharm = TRUE)
       }
 
       quitteobj <- CAPEX
-      fwrite(quitteobj, "C:/Users/jaruschm/Downloads/mrTInput/Energy intensity/capex.csv")
+      #fwrite(quitteobj, "C:/Users/jaruschm/Downloads/mrTInput/Energy intensity/capex.csv")
 
     },
     "nonFuelOPEXtrackedFleet" = {
