@@ -27,7 +27,7 @@ toolAdjustCAPEXtrackedFleet <- function(dt, ISOcountries, yrs, completeData, GDP
                                  variable == "Capital costs (purchase)"                               &
                                  period %in% c(2015, 2040)])
   # First fix applied in toolPSICosts() in EDGE-T old
-  LDV4WpurchaseCost[period == 2040 & technology == "BEV", value := 0.8 * value]
+  LDV4WpurchaseCost[period == 2040 & technology == "BEV", value := 0.9 * value]
   LDV4WpurchaseCost[period == 2040 & technology == "FCEV", value := 0.9 * value]
   # Second fix applied in mergeData() in EDGE-T old
   LDV4WpurchaseCost <- rbind(LDV4WpurchaseCost, copy(LDV4WpurchaseCost[period == 2040][, period := 2100]))
