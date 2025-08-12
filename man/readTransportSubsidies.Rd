@@ -17,7 +17,7 @@ Read-in transport subsidies csv files as magclass object
 }
 }
 \seealso{
-\code{\link{readSource}}
+\code{\link[madrat:readSource]{madrat::readSource()}}
 }
 \author{
 Renato Rodrigues

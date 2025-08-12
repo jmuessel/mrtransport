@@ -21,7 +21,7 @@ a <- readSource("PSI", subtype = "energyIntensity")
 }
 }
 \seealso{
-\code{\link{readSource}}
+\code{\link[madrat:readSource]{madrat::readSource()}}
 }
 \author{
 Johnna Hoppe

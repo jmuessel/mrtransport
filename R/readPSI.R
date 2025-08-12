@@ -9,11 +9,10 @@
 #' a <- readSource("PSI", subtype = "energyIntensity")
 #' }
 #' @author Johnna Hoppe
-#' @seealso \code{\link{readSource}}
+#' @seealso [madrat::readSource()]
 #' @import data.table
 #' @importFrom readxl read_excel
 #' @importFrom magclass as.magpie
-#' @export
 
 readPSI <- function(subtype = c("CAPEX", "energyIntensity")) {
   scenario <- value <- variable <- unit <- region <- V1 <- NULL

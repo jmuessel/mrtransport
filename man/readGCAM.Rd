@@ -24,7 +24,7 @@ a <- readSource("GCAM", subtype = "histEDsemand")
 }
 }
 \seealso{
-\code{\link{readSource}}
+\code{\link[madrat:readSource]{madrat::readSource()}}
 }
 \author{
 Johnna Hoppe, Alois Dirnaichner

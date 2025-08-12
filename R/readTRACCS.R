@@ -9,11 +9,10 @@
 #' a <- readSource("TRACCS")
 #' }
 #' @author Alois Dirnaichner
-#' @seealso \code{\link{readSource}}
+#' @seealso [madrat::readSource()]
 #' @import data.table
 #' @importFrom readxl read_excel
 #' @importFrom magclass setComment
-#' @export
 #'
 readTRACCS <- function(subtype = c("fuelEnDensity", "roadFuelConsumption", "energyIntensity", "loadFactor",
                                    "annualMileage", "roadESdemand", "histESdemand", "railFeDemand", "vehPopulation")) {

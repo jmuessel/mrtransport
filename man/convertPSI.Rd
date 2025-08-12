@@ -23,7 +23,7 @@ a <- readSource("PSI", subtype = "costs")
 }
 }
 \seealso{
-\code{\link{readSource}}
+\code{\link[madrat:readSource]{madrat::readSource()}}
 }
 \author{
 Johanna Hoppe

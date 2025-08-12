@@ -24,7 +24,7 @@ a <- readSource("TRACCS")
 }
 }
 \seealso{
-\code{\link{readSource}}
+\code{\link[madrat:readSource]{madrat::readSource()}}
 }
 \author{
 Alois Dirnaichner
