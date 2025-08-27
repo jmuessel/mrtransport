@@ -56,6 +56,7 @@ toolAdjustNonFuelOPEXother <- function(dt, ISOcountries, yrs, completeData, filt
   missing50 <- dt[is.na(value) & univocalName == "Motorcycle (50-250cc)"]
   missing250 <- dt[is.na(value) & univocalName == "Motorcycle (>250cc)"]
   missingMoped <- dt[is.na(value) & univocalName == "Moped"]
+  missingRickshaw <- dt[is.na(value) & univocalName == "Rickshaw"]
 
   # Get values of other vehicle types
   twoW50 <- dt[!is.na(value) & univocalName == "Motorcycle (50-250cc)"]
@@ -104,7 +105,15 @@ toolAdjustNonFuelOPEXother <- function(dt, ISOcountries, yrs, completeData, filt
   missingMoped[, value := twoW50][, twoW50 := NULL]
   missingMoped[is.na(value), value := twoW250][, twoW250 := NULL]
 
-  missing2W <- rbind(missing50, missing250, missingMoped)
+  missingRickshaw <- merge.data.table(missingRickshaw, twoW50, by = c("region", "technology", "period"), all.x = TRUE)
+  missingRickshaw <- merge.data.table(missingRickshaw, twoW250, by = c("region", "technology", "period"), all.x = TRUE)
+  missingRickshaw <- merge.data.table(missingRickshaw, twoWmoped, by = c("region", "technology", "period"), all.x = TRUE)
+  missingRickshaw[, value := twoW50][, twoW50 := NULL]
+  missingRickshaw[is.na(value), value := twoW250][, twoW250 := NULL]
+  missingRickshaw[is.na(value), value := twoWmoped][, twoWmoped := NULL]
+  
+
+  missing2W <- rbind(missing50, missing250, missingMoped, missingRickshaw)
   missing2W[, unit := unique(dt[!(is.na(value))]$unit)][, variable := "Operating costs (total non-fuel)"]
 
   dt <- rbind(dt[!(is.na(value) & univocalName %in% filter$trn_pass_road_LDV_2W)], missing2W)

@@ -48,7 +48,7 @@ toolAdjustCAPEXother <- function(dt, ISOcountries, yrs, completeData, GDPpcMER, 
   h2Air[, value := ifelse(period > 2040, value[period == 2040], value), by = c("region")]
   dt <- rbind(dt, h2Air)
 
-  #4: Some two wheeler classes are missing and are replaced by other vehicle classes
+    #5: Some two wheeler classes are missing and are replaced by other vehicle classes
   # Find missing values
   completeData <- completeData[!(univocalName %in% c(filter$trn_freight_road, "Cycle", "Walk") |
                                    univocalName %in% filter$trn_pass_road_LDV_4W | univocalName == "Bus")]
@@ -57,6 +57,7 @@ toolAdjustCAPEXother <- function(dt, ISOcountries, yrs, completeData, GDPpcMER, 
   missing50 <- dt[is.na(value) & univocalName == "Motorcycle (50-250cc)"]
   missing250 <- dt[is.na(value) & univocalName == "Motorcycle (>250cc)"]
   missingMoped <- dt[is.na(value) & univocalName == "Moped"]
+
 
   # Get values of other vehicle types
   twoW50 <- dt[!is.na(value) & univocalName == "Motorcycle (50-250cc)"]
@@ -104,13 +105,20 @@ toolAdjustCAPEXother <- function(dt, ISOcountries, yrs, completeData, GDPpcMER, 
   missingMoped[, value := twoW50][, twoW50 := NULL]
   missingMoped[is.na(value), value := twoW250][, twoW250 := NULL]
 
-  missing2W <- rbind(missing50, missing250, missingMoped)
+  missingRickshaw <- merge.data.table(missingRickshaw, twoW50, by = c("region", "technology", "period"), all.x = TRUE)
+  missingRickshaw <- merge.data.table(missingRickshaw, twoW250, by = c("region", "technology", "period"), all.x = TRUE)
+  missingRickshaw <- merge.data.table(missingRickshaw, twoWmoped, by = c("region", "technology", "period"), all.x = TRUE)
+  missingRickshaw[, value := twoW50][, twoW50 := NULL]
+  missingRickshaw[is.na(value), value := twoW250][, twoW250 := NULL]
+  missingRickshaw[is.na(value), value := twoWmoped][, twoWmoped := NULL]
+  
+  missing2W <- rbind(missing50, missing250, missingMoped, missingRickshaw)
   missing2W[, unit := unique(dt[!(is.na(value))]$unit)][, variable := "Capital costs (total)"]
 
-  dt <- rbind(dt[!(is.na(value) & univocalName %in% filter$trn_pass_road_LDV_2W)], missing2W)
+  dt <- rbind(dt[!(is.na(value) & univocalName %in% c("Rickshaw", filter$trn_pass_road_LDV_2W))], missing2W)
   dt[, check := NULL]
 
-  #5: Lower the prices for LDW 2 Wheelers depending on the GDP to represent a 2nd hand vehicle market
+  #6: Lower the prices for LDW 2 Wheelers depending on the GDP to represent a 2nd hand vehicle market
   convfact <- GDPuc::toolConvertSingle(x = 1, iso3c = "USA",  unit_in = "constant 2005 Int$PPP",
                                        unit_out = mrdrivers::toolGetUnitDollar())
   minGDP <- 4000 * convfact  ## minimum GDPcap after which the linear trend starts
