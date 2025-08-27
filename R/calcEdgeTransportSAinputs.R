@@ -93,7 +93,7 @@ calcEdgeTransportSAinputs <- function(subtype, SSPscen = "SSP2", IEAharm = TRUE)
   setkey(completeDataSet, region, period, univocalName, technology)
 
   # categories for filtering data
-  categories <- c("trn_pass_road_LDV_4W", "trn_pass_road_LDV_2W", "trn_freight_road",
+  categories <- c("trn_pass_road_LDV_4W", "trn_pass_road_LDV_3W", "trn_pass_road_LDV_2W", "trn_freight_road",
                   "trn_pass", "trn_freight", "trn_pass_road")
 
   findEntries <- function(category, dataTable) {

@@ -112,10 +112,10 @@ toolAdjustCAPEXother <- function(dt, ISOcountries, yrs, completeData, GDPpcMER, 
   missingRickshaw[is.na(value), value := twoW250][, twoW250 := NULL]
   missingRickshaw[is.na(value), value := twoWmoped][, twoWmoped := NULL]
   
-  missing2W <- rbind(missing50, missing250, missingMoped, missingRickshaw)
-  missing2W[, unit := unique(dt[!(is.na(value))]$unit)][, variable := "Capital costs (total)"]
+  missing2_3W <- rbind(missing50, missing250, missingMoped, missingRickshaw)
+  missing2_3W[, unit := unique(dt[!(is.na(value))]$unit)][, variable := "Capital costs (total)"]
 
-  dt <- rbind(dt[!(is.na(value) & univocalName %in% c("Rickshaw", filter$trn_pass_road_LDV_2W))], missing2W)
+  dt <- rbind(dt[!(is.na(value) & univocalName %in% c(filter$trn_pass_road_LDV_3W, filter$trn_pass_road_LDV_2W))], missing2_3W)
   dt[, check := NULL]
 
   #6: Lower the prices for LDW 2 Wheelers depending on the GDP to represent a 2nd hand vehicle market
