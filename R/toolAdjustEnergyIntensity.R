@@ -129,9 +129,10 @@ toolAdjustEnergyIntensity <- function(dt, regionTRACCS, TrendsEnIntPSI, filter, 
   missingPassRailDataIDN[, region := "IDN"]
   dt <- rbind(dt, missingPassRailDataIDN)
 
-  #g) Alternative technologies for Rickshaws are not covered by our sources
+  # g) Alternative technologies for Rickshaws are not covered by our sources
   # Rickshaws are assumed to have the same as Motorcycle (50-250cc) BEV
-  alternativeRickshawTech <- dt[univocalName == "Motorcycle (50-250cc)" & technology %in% c("BEV") & region %in% dt[univocalName == "Rickshaw"]$region]
+  alternativeRickshawTech <- dt[univocalName == "Motorcycle (50-250cc)" &
+                                  technology %in% c("BEV") & region %in% dt[univocalName == "Rickshaw"]$region]
   alternativeRickshawTech[, univocalName := "Rickshaw"]
   dt <- rbind(dt, alternativeRickshawTech)
 

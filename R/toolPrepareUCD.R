@@ -23,7 +23,7 @@ toolPrepareUCD <- function(x, subtype) {
   #make mapping region specific and add additional mapping assumptions:
   #introduce Rickshaws to "IND" if UCD values are being used
   mappingUCD <- mappingUCDraw
- 
+
   weight <- readSource("UCD", subtype = "feDemand")
   #fe data is given only for 2005
   weight <- magpie2dt(weight)[, c("unit", "period", "variable") := NULL]

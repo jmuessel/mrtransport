@@ -154,7 +154,6 @@ calcEdgeTransportSAinputs <- function(subtype, SSPscen = "SSP2", IEAharm = TRUE)
 
       setkey(energyIntensity, region, period, univocalName, technology, variable, unit)
 
-      
       # Check whether data is complete
       check <- merge.data.table(completeDataSet, energyIntensity, all = TRUE)
       if (nrow(check[is.na(value)]) > 0) {
@@ -201,7 +200,6 @@ calcEdgeTransportSAinputs <- function(subtype, SSPscen = "SSP2", IEAharm = TRUE)
 
       setkey(annualMileageRaw, region, period, univocalName, technology, variable, unit)
 
-      
       annualMileage <- toolAdjustAnnualMileage(annualMileageRaw, completeDataSet, filterEntries)
 
       # Add annual mileage of zero for active modes

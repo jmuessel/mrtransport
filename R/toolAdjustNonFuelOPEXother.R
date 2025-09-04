@@ -34,7 +34,7 @@ toolAdjustNonFuelOPEXother <- function(dt, ISOcountries, yrs, completeData, filt
   dt[univocalName %in% c("Domestic Ship", "International Ship"), value := value * (1 - 0.3)]
   dt[univocalName %in% c("Domestic Ship", "International Ship"), variable := "Operating costs (total non-fuel)"]
 
-  #3: Add hydrogen airplanes
+  # 3: Add hydrogen airplanes
   h2Air <- dt[univocalName == "Domestic Aviation" & technology == "Liquids"][, technology := "Hydrogen"]
   # following https://www.fch.europa.eu/sites/default/files/FCH%20Docs/20200507_Hydrogen%20Powered%20Aviation%20report_FINAL%20web%20%28ID%208706035%29.pdf # nolint: line_length_linter
   # maintenance costs are 50% higher than than a liquids fuelled airplane
@@ -47,7 +47,7 @@ toolAdjustNonFuelOPEXother <- function(dt, ISOcountries, yrs, completeData, filt
   h2Air[, value := ifelse(period > 2040, value[period == 2040], value), by = c("region")]
   dt <- rbind(dt, h2Air)
 
-  #4: Some two wheeler classes are missing and are replaced by other vehicle classes
+  # 4: Some two wheeler classes are missing and are replaced by other vehicle classes
   # Find missing values
   completeData <- completeData[!(univocalName %in% c(filter$trn_freight_road, "Cycle", "Walk") |
                                    univocalName %in% filter$trn_pass_road_LDV_4W | univocalName == "Bus")]
@@ -56,7 +56,7 @@ toolAdjustNonFuelOPEXother <- function(dt, ISOcountries, yrs, completeData, filt
   missing50 <- dt[is.na(value) & univocalName == "Motorcycle (50-250cc)"]
   missing250 <- dt[is.na(value) & univocalName == "Motorcycle (>250cc)"]
   missingMoped <- dt[is.na(value) & univocalName == "Moped"]
-  missingRickshaw <- dt[is.na(value) & univocalName == "Rickshaw"]
+  missing3W <- dt[is.na(value) & univocalName == "Rickshaw"]
 
   # Get values of other vehicle types
   twoW50 <- dt[!is.na(value) & univocalName == "Motorcycle (50-250cc)"]
@@ -105,18 +105,19 @@ toolAdjustNonFuelOPEXother <- function(dt, ISOcountries, yrs, completeData, filt
   missingMoped[, value := twoW50][, twoW50 := NULL]
   missingMoped[is.na(value), value := twoW250][, twoW250 := NULL]
 
-  missingRickshaw <- merge.data.table(missingRickshaw, twoW50, by = c("region", "technology", "period"), all.x = TRUE)
-  missingRickshaw <- merge.data.table(missingRickshaw, twoW250, by = c("region", "technology", "period"), all.x = TRUE)
-  missingRickshaw <- merge.data.table(missingRickshaw, twoWmoped, by = c("region", "technology", "period"), all.x = TRUE)
-  missingRickshaw[, value := twoW50][, twoW50 := NULL]
-  missingRickshaw[is.na(value), value := twoW250][, twoW250 := NULL]
-  missingRickshaw[is.na(value), value := twoWmoped][, twoWmoped := NULL]
-  
+  missing3W <- merge.data.table(missing3W, twoW50, by = c("region", "technology", "period"), all.x = TRUE)
+  missing3W <- merge.data.table(missing3W, twoW250, by = c("region", "technology", "period"), all.x = TRUE)
+  missing3W <- merge.data.table(missing3W, twoWmoped, by = c("region", "technology", "period"), all.x = TRUE)
+  missing3W[, value := twoW50][, twoW50 := NULL]
+  missing3W[is.na(value), value := twoW250][, twoW250 := NULL]
+  missing3W[is.na(value), value := twoWmoped][, twoWmoped := NULL]
 
-  missing2_3W <- rbind(missing50, missing250, missingMoped, missingRickshaw)
+
+  missing2_3W <- rbind(missing50, missing250, missingMoped, missing3W)
   missing2_3W[, unit := unique(dt[!(is.na(value))]$unit)][, variable := "Operating costs (total non-fuel)"]
 
-  dt <- rbind(dt[!(is.na(value) & univocalName %in% c(filter$trn_pass_road_LDV_3W, filter$trn_pass_road_LDV_2W))], missing2_3W)
+  dt <- rbind(dt[!(is.na(value) &
+                     univocalName %in% c(filter$trn_pass_road_LDV_3W, filter$trn_pass_road_LDV_2W))], missing2_3W)
   dt[, check := NULL]
 
   return(dt)
