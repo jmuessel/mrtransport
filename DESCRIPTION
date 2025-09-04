@@ -1,6 +1,6 @@
 Package: mrtransport
 Title: Input data generation for the EDGE-Transport model
-Version: 0.11.6
+Version: 0.11.7
 Authors@R: c(
     person("Johanna", "Hoppe", , "johanna.hoppe@pik-potsdam.de", role = c("aut", "cre"),
            comment = c(ORCID = "0009-0004-6753-5090")),
@@ -34,4 +34,4 @@ Imports:
     tidyselect,
     utils,
     zoo
-Date: 2025-07-23
+Date: 2025-07-24
