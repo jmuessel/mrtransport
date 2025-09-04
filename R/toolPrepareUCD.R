@@ -21,12 +21,9 @@ toolPrepareUCD <- function(x, subtype) {
   setkey(mappingUCDraw, UCD_sector, mode, size_class, UCD_technology, UCD_fuel)
 
   #make mapping region specific and add additional mapping assumptions:
-  #introduce Rickshaws to "IND"
-  #regions <- unique(dt$region)
-  mappingUCD <- mappingUCDraw#[rep(seq_len(.N), times = length(regions))]
-  #mappingUCD[, region := rep(regions, each = nrow(mappingUCDraw))]
-  #mappingUCD[region == "IND" & size_class == "Three-Wheeler", univocalName := "Rickshaw"]
-
+  #introduce Rickshaws to "IND" if UCD values are being used
+  mappingUCD <- mappingUCDraw
+ 
   weight <- readSource("UCD", subtype = "feDemand")
   #fe data is given only for 2005
   weight <- magpie2dt(weight)[, c("unit", "period", "variable") := NULL]
