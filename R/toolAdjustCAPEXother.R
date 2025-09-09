@@ -57,6 +57,8 @@ toolAdjustCAPEXother <- function(dt, ISOcountries, yrs, completeData, GDPpcMER, 
   missing50 <- dt[is.na(value) & univocalName == "Motorcycle (50-250cc)"]
   missing250 <- dt[is.na(value) & univocalName == "Motorcycle (>250cc)"]
   missingMoped <- dt[is.na(value) & univocalName == "Moped"]
+  missing3W <- dt[is.na(value) & univocalName == "Rickshaw"]
+
 
 
   # Get values of other vehicle types
