@@ -126,7 +126,7 @@ toolPrepareGCAM <- function(x, subtype) {
       mappingGCAM <- mappingGCAM[, c("GCAMtechnology", "technology") := NULL]
       mappingGCAM <- unique(mappingGCAM)
       dt <- mappingGCAM[dt, on = c(
-        GCAMsector = "sector", GCAMsubsector = "subsector", GCAMtechnology = "technology", region = "region"
+        GCAMsector = "sector", GCAMsubsector = "subsector", region = "region"
       ), allow.cartesian = TRUE]
       dt <- dt[, c("region", "univocalName", "variable", "unit", "value")]
       dt <- dt[univocalName %in% c("Cycle", "Walk")]
