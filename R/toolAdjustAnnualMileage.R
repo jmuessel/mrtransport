@@ -43,7 +43,7 @@ toolAdjustAnnualMileage <- function(dt, completeData, filter, ariadneAdjustments
   # If there are NAs take mean over regions by technology
   dt[, value := ifelse(is.na(value), mean(value, na.rm = TRUE), value),
      by = c("period", "technology", "univocalName")]
-  #         by = .(period, univocalName, region, variable, technology, unit)]
+
   #missing Rickshaw data in India
   dt[region == "IND" & univocalName == "Rickshaw", value := 10000]
   dt <- dt[period <= 2010, value := value[period == 2010], by = .(region, univocalName, variable, technology)]
