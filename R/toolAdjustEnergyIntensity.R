@@ -129,6 +129,13 @@ toolAdjustEnergyIntensity <- function(dt, regionTRACCS, TrendsEnIntPSI, filter, 
   missingPassRailDataIDN[, region := "IDN"]
   dt <- rbind(dt, missingPassRailDataIDN)
 
+  # g) Alternative technologies for Rickshaws are not covered by our sources
+  # Rickshaws are assumed to have the same as Motorcycle (50-250cc) BEV
+  alternativeRickshawTech <- dt[univocalName == "Motorcycle (50-250cc)" &
+                                  technology %in% c("BEV") & region %in% dt[univocalName == "Rickshaw"]$region]
+  alternativeRickshawTech[, univocalName := "Rickshaw"]
+  dt <- rbind(dt, alternativeRickshawTech)
+
   # 4: adjustments for scenarioMIP validation: adjust outliers to global mean
   ISOcountriesMap <- system.file("extdata", "regionmappingISOto21to12.csv", package = "mrtransport", mustWork = TRUE)
   ISOcountriesMap <- fread(ISOcountriesMap, skip = 0)
