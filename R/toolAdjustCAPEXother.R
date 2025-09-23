@@ -107,11 +107,11 @@ toolAdjustCAPEXother <- function(dt, ISOcountries, yrs, completeData, GDPpcMER, 
   missingMoped[, value := twoW50][, twoW50 := NULL]
   missingMoped[is.na(value), value := twoW250][, twoW250 := NULL]
 
-  missing3W <- merge.data.table(missing3W, twoW50, by = c("region", "technology", "period"), all.x = TRUE)
   missing3W <- merge.data.table(missing3W, twoW250, by = c("region", "technology", "period"), all.x = TRUE)
+  missing3W <- merge.data.table(missing3W, twoW50, by = c("region", "technology", "period"), all.x = TRUE)
   missing3W <- merge.data.table(missing3W, twoWmoped, by = c("region", "technology", "period"), all.x = TRUE)
-  missing3W[, value := twoW50][, twoW50 := NULL]
-  missing3W[is.na(value), value := twoW250][, twoW250 := NULL]
+  missing3W[, value := twoW250][, twoW250 := NULL]
+  missing3W[is.na(value), value := twoW50][, twoW50 := NULL]
   missing3W[is.na(value), value := twoWmoped][, twoWmoped := NULL]
 
   missing2_3W <- rbind(missing50, missing250, missingMoped, missing3W)
