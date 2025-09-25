@@ -43,6 +43,10 @@ toolAdjustAnnualMileage <- function(dt, completeData, filter, ariadneAdjustments
   # If there are NAs take mean over regions by technology
   dt[, value := ifelse(is.na(value), mean(value, na.rm = TRUE), value),
      by = c("period", "technology", "univocalName")]
+
+  #missing Rickshaw data in India, with a first of estimate. To be refined in the future
+  #https://docs.wbcsd.org/2019/12/WBCSD_India_Business_Guide_to_EV_Adoption.pdf (2019)
+  dt[region == "IND" & univocalName == "Rickshaw", value := 15000]
   dt <- dt[period <= 2010, value := value[period == 2010], by = .(region, univocalName, variable, technology)]
 
   #adjust outliers CHA for LDVs, EWN for Busses,

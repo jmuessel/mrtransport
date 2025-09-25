@@ -17,11 +17,11 @@ toolAdjustCAPEXother <- function(dt, ISOcountries, yrs, completeData, GDPpcMER, 
   variable <- . <- value     <- technology <- gdppc <-
     period <- region <- univocalName <- unit <- check  <- NULL
 
-  #1: Aggregate different CAPEX types
+  # 1: Aggregate different CAPEX types
   dt <- dt[, .(value = sum(value)), by = c("region",  "period", "univocalName", "technology",  "unit")]
   dt[, variable := "Capital costs (total)"]
 
-  #2: CAPEX are given combined with non fuel OPEX for shipping and rail. Apply shares
+  # 2: CAPEX are given combined with non fuel OPEX for shipping and rail. Apply shares
   # Trains
   # https://www.unescap.org/sites/default/files/1.%20Part%20A.%20Point%20to%20point%20railway%20traffic%20costing%20model.pdf # nolint: line_length_linter
   # O&M 80% for low traffic lines
@@ -35,7 +35,7 @@ toolAdjustCAPEXother <- function(dt, ISOcountries, yrs, completeData, GDPpcMER, 
   dt[univocalName %in% c("Domestic Ship", "International Ship"), value := value * 0.3]
   dt[univocalName %in% c("Domestic Ship", "International Ship"), variable := "Capital costs (total)"]
 
-  #3: Add hydrogen airplanes
+  # 3: Add hydrogen airplanes
   h2Air <- dt[univocalName == "Domestic Aviation" & technology == "Liquids"][, technology := "Hydrogen"]
   # CAPEX of hydrogen airplanes is assumed today 5 times more expensive than a conventional airplane
   # (i.e. not present in the market)
@@ -48,7 +48,7 @@ toolAdjustCAPEXother <- function(dt, ISOcountries, yrs, completeData, GDPpcMER, 
   h2Air[, value := ifelse(period > 2040, value[period == 2040], value), by = c("region")]
   dt <- rbind(dt, h2Air)
 
-  #4: Some two wheeler classes are missing and are replaced by other vehicle classes
+  # 5: Some two wheeler classes are missing and are replaced by other vehicle classes
   # Find missing values
   completeData <- completeData[!(univocalName %in% c(filter$trn_freight_road, "Cycle", "Walk") |
                                    univocalName %in% filter$trn_pass_road_LDV_4W | univocalName == "Bus")]
@@ -57,6 +57,9 @@ toolAdjustCAPEXother <- function(dt, ISOcountries, yrs, completeData, GDPpcMER, 
   missing50 <- dt[is.na(value) & univocalName == "Motorcycle (50-250cc)"]
   missing250 <- dt[is.na(value) & univocalName == "Motorcycle (>250cc)"]
   missingMoped <- dt[is.na(value) & univocalName == "Moped"]
+  missing3W <- dt[is.na(value) & univocalName == "Rickshaw"]
+
+
 
   # Get values of other vehicle types
   twoW50 <- dt[!is.na(value) & univocalName == "Motorcycle (50-250cc)"]
@@ -104,13 +107,21 @@ toolAdjustCAPEXother <- function(dt, ISOcountries, yrs, completeData, GDPpcMER, 
   missingMoped[, value := twoW50][, twoW50 := NULL]
   missingMoped[is.na(value), value := twoW250][, twoW250 := NULL]
 
-  missing2W <- rbind(missing50, missing250, missingMoped)
-  missing2W[, unit := unique(dt[!(is.na(value))]$unit)][, variable := "Capital costs (total)"]
+  missing3W <- merge.data.table(missing3W, twoW250, by = c("region", "technology", "period"), all.x = TRUE)
+  missing3W <- merge.data.table(missing3W, twoW50, by = c("region", "technology", "period"), all.x = TRUE)
+  missing3W <- merge.data.table(missing3W, twoWmoped, by = c("region", "technology", "period"), all.x = TRUE)
+  missing3W[, value := twoW250][, twoW250 := NULL]
+  missing3W[is.na(value), value := twoW50][, twoW50 := NULL]
+  missing3W[is.na(value), value := twoWmoped][, twoWmoped := NULL]
 
-  dt <- rbind(dt[!(is.na(value) & univocalName %in% filter$trn_pass_road_LDV_2W)], missing2W)
+  missing2_3W <- rbind(missing50, missing250, missingMoped, missing3W)
+  missing2_3W[, unit := unique(dt[!(is.na(value))]$unit)][, variable := "Capital costs (total)"]
+
+  dt <- rbind(dt[!(is.na(value) &
+                     univocalName %in% c(filter$trn_pass_road_LDV_3W, filter$trn_pass_road_LDV_2W))], missing2_3W)
   dt[, check := NULL]
 
-  #5: Lower the prices for LDW 2 Wheelers depending on the GDP to represent a 2nd hand vehicle market
+  # 6: Lower the prices for LDW 2 Wheelers depending on the GDP to represent a 2nd hand vehicle market
   convfact <- GDPuc::toolConvertSingle(x = 1, iso3c = "USA",  unit_in = "constant 2005 Int$PPP",
                                        unit_out = mrdrivers::toolGetUnitDollar())
   minGDP <- 4000 * convfact  ## minimum GDPcap after which the linear trend starts
