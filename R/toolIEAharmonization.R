@@ -18,10 +18,9 @@ toolIEAharmonization <- function(...) {
 
   # Load IEA energy balances data for harmonization [unit: EJ]
   IEAbalMag <- calcOutput(type = "IEAOutputTransport", aggregate = FALSE)
+
   IEAbal <-  magpie2dt(IEAbalMag, datacols = c("se", "fe", "te", "mod", "flow"),
                        regioncol = "region", yearcol = "period")
-  # Select only fuel types that are represented in EDGE-T
-  IEAbal <- IEAbal[fe %in% c("fedie", "fepet", "fegat", "feelt")]
   IEAbal <- IEAbal[te != "dot"]  #delete fedie.dot #Q: what is fedie.dot?
   setnames(IEAbal, "value", "feIEA")
 

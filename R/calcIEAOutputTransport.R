@@ -20,20 +20,13 @@ calcIEAOutputTransport <- function() {
   ieamatch <- toolGetMapping(type = "sectoral", name = "structuremappingIO_outputs.csv",
                              where = "mrcommons")
 
-  # add total buildings electricity demand (feelb = feelcb + feelhpb + feelrhb)
-  ieamatch <- rbind(
-    ieamatch,
-    ieamatch %>%
-      dplyr::filter(.data$REMINDitems_out %in% c("feelcb", "feelhpb", "feelrhb")) %>%
-      dplyr::mutate(REMINDitems_out = "feelb")
-  )
-
-
   target <- c("REMINDitems_in", "REMINDitems_out", "REMINDitems_tech", "iea_product", "iea_flows")
 
   ieamatch <- ieamatch %>%
     dplyr::select(tidyselect::all_of(c("iea_product", "iea_flows", "Weight", target))) %>%
     stats::na.omit() %>%
+    # select only fuel types that are represented in EDGE-T
+    dplyr::filter(.data$REMINDitems_out %in% c("fedie", "fepet", "fegat", "feelt")) %>%
     tidyr::unite("target", tidyselect::all_of(target), sep = ".", remove = FALSE) %>%
     tidyr::unite("product.flow", c("iea_product", "iea_flows"), sep = ".") %>%
     dplyr::filter(.data$product.flow %in% getNames(data))

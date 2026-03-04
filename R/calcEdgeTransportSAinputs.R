@@ -247,13 +247,16 @@ calcEdgeTransportSAinputs <- function(subtype, SSPscen = "SSP2", IEAharm = TRUE)
                                           IEAharm = FALSE, warnNA = FALSE, aggregate = FALSE))
       loadFactor <- magpie2dt(calcOutput(type = "EdgeTransportSAinputs", subtype = "loadFactor",
                                          warnNA = FALSE, aggregate = FALSE))
+      annualMileage <- magpie2dt(calcOutput(type = "EdgeTransportSAinputs", subtype = "annualMileage",
+                                         warnNA = FALSE, aggregate = FALSE))
 
       # Inter- and extrapolate all data to model input data years
       data <- list(esDemandGCAM     = esDemandGCAM,
                    esDemandTRACCS   = esDemandTRACCS,
                    feDemandEurostat = feDemandEurostat,
                    enIntensity      = enIntensity,
-                   loadFactor       = loadFactor)
+                   loadFactor       = loadFactor,
+                   annualMileage    = annualMileage)
 
       # The historical energy service demand is only used for years <= 2010, future years will be calculated by demand
       # regression in the model
@@ -263,7 +266,7 @@ calcEdgeTransportSAinputs <- function(subtype, SSPscen = "SSP2", IEAharm = TRUE)
 
       esDemandRaw <- toolMergeHistESdemand(data, filterEntries, countriesTRACCS)
 
-      esDemand <- toolAdjustEsDemand(esDemandRaw, ISOcountriesMap, completeDataSet, filterEntries)
+      esDemand <- toolAdjustEsDemand(esDemandRaw, ISOcountriesMap, completeDataSet, filterEntries, data)
 
       # Harmonize energy intensity data in order to match IEA final energy values
       if (IEAharm == TRUE) {
