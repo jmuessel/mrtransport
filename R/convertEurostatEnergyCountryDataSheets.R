@@ -9,8 +9,8 @@
 #' a <- readSource("Eurostat")
 #' }
 #' @author Johanna Hoppe
-#' @seealso \code{\link{readSource}}
-#' @importFrom magclass as.magpie getItems getSets mselect getItems<- getSets<-
+#' @seealso [madrat::readSource()]
+#' @importFrom magclass getItems getSets getItems<- getSets<-
 
 convertEurostatEnergyCountryDataSheets <- function(x, subtype) {
   getItems(x, dim = 1) <- toolCountry2isocode(getItems(x, dim = 1), mapping = c("EL" = "GRC"))

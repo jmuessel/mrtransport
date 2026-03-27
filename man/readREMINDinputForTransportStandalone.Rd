@@ -2,10 +2,16 @@
 % Please edit documentation in R/readREMINDinputForTransportStandalone.R
 \name{readREMINDinputForTransportStandalone}
 \alias{readREMINDinputForTransportStandalone}
-\title{Load fuel prices from a REMIND fulldata.gdx in USD/MJ}
+\title{Load information from a previous REMIND run}
 \usage{
-readREMINDinputForTransportStandalone()
+readREMINDinputForTransportStandalone(subtype)
+}
+\arguments{
+\item{subtype}{Either "fuelCosts" or "esDemand"}
 }
 \description{
-Load fuel prices from a REMIND fulldata.gdx in USD/MJ
+Load information from a previous REMIND run
+}
+\author{
+Falk Benke
 }

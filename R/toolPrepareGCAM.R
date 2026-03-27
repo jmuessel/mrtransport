@@ -12,12 +12,19 @@
 #' @export
 
 toolPrepareGCAM <- function(x, subtype) {
-  region <- period     <-
+  region <- period     <- GCAMsubsector <-
     technology <- univocalName <- variable <- unit <- esdem <- value <- . <- NULL
 
   dt <- magpie2dt(x)
   mapfile <- system.file("extdata", "mappingGCAMtoEDGET.csv", package = "mrtransport", mustWork = TRUE)
-  mappingGCAM <- fread(mapfile)
+  mappingGCAMraw <- fread(mapfile)
+
+  # make mapping region specific and add additional mapping assumptions:
+  # introduce Rickshaws to "IND"
+  regions <- unique(dt$region)
+  mappingGCAM <- mappingGCAMraw[rep(seq_len(.N), times = length(regions))]
+  mappingGCAM[, region := rep(regions, each = nrow(mappingGCAMraw))]
+  mappingGCAM[region == "IND" & GCAMsubsector == "Three-Wheeler", univocalName := "Rickshaw"]
 
   switch(
     subtype,
@@ -32,8 +39,9 @@ toolPrepareGCAM <- function(x, subtype) {
       # -> set to 1 so that they are equally considered
       dt[is.na(esdem) | esdem == 0, esdem := 1]
 
-      dt <- mappingGCAM[dt, on = c(GCAMsector = "sector", GCAMsubsector = "subsector", GCAMtechnology = "technology"),
-                        allow.cartesian = TRUE]
+      dt <- mappingGCAM[dt, on = c(
+        GCAMsector = "sector", GCAMsubsector = "subsector", GCAMtechnology = "technology", region = "region"
+      ), allow.cartesian = TRUE]
       # GCAM data partly contains aggregated values for different levels of the decision tree
       # -> take only the lowest level
       dt <- dt[!is.na(univocalName)]
@@ -58,8 +66,9 @@ toolPrepareGCAM <- function(x, subtype) {
       # -> set to 1 so that they are equally considered
       dt[is.na(esdem) | esdem == 0, esdem := 1]
 
-      dt <- mappingGCAM[dt, on = c(GCAMsector = "sector", GCAMsubsector = "subsector", GCAMtechnology = "technology"),
-                        allow.cartesian = TRUE]
+      dt <- mappingGCAM[dt, on = c(
+        GCAMsector = "sector", GCAMsubsector = "subsector", GCAMtechnology = "technology", region = "region"
+      ), allow.cartesian = TRUE]
       # GCAM data partly contains aggregated values for different levels of the decision tree
       # -> take only the lowest level
       dt <- dt[!is.na(univocalName)]
@@ -73,8 +82,9 @@ toolPrepareGCAM <- function(x, subtype) {
       # use only historical demand
       dt <- dt[period %in% c(1990, 2005, 2010)]
       # map
-      dt <- mappingGCAM[dt, on = c(GCAMsector = "sector", GCAMsubsector = "subsector", GCAMtechnology = "technology"),
-                        allow.cartesian = TRUE]
+      dt <- mappingGCAM[dt, on = c(
+        GCAMsector = "sector", GCAMsubsector = "subsector", GCAMtechnology = "technology", region = "region"
+      ), allow.cartesian = TRUE]
       # GCAM data partly contains aggregated values for different levels of the decision tree
       # -> take only the lowest level
       dt <- dt[!is.na(univocalName)]
@@ -98,7 +108,7 @@ toolPrepareGCAM <- function(x, subtype) {
       # some technologies have zero or no demand for certain countries
       #-> set to 1 so that they are equally considered
       dt[is.na(esdem) | esdem == 0, esdem := 1]
-      #GCAM data for speed of modes is not technology specific
+      # GCAM data for speed of modes is not technology specific
       mappingGCAM <- mappingGCAM[, c("GCAMtechnology", "technology") := NULL]
       mappingGCAM <- unique(mappingGCAM)
       dt <- mappingGCAM[dt, on = c(GCAMsector = "sector", GCAMsubsector = "subsector"), allow.cartesian = TRUE]
@@ -112,36 +122,41 @@ toolPrepareGCAM <- function(x, subtype) {
     },
     "speedNonMotorized" = {
       setnames(dt, c("supplysector", "tranSubsector"), c("sector", "subsector"))
-      #GCAM data for speed of modes is not technology specific
+      # GCAM data for speed of modes is not technology specific
       mappingGCAM <- mappingGCAM[, c("GCAMtechnology", "technology") := NULL]
       mappingGCAM <- unique(mappingGCAM)
-      dt <- mappingGCAM[dt, on = c(GCAMsector = "sector", GCAMsubsector = "subsector"), allow.cartesian = TRUE]
+      dt <- mappingGCAM[dt, on = c(
+        GCAMsector = "sector", GCAMsubsector = "subsector", region = "region"
+      ), allow.cartesian = TRUE]
       dt <- dt[, c("region", "univocalName", "variable", "unit", "value")]
       dt <- dt[univocalName %in% c("Cycle", "Walk")]
       setkey(dt,  region, univocalName, variable, unit)
     },
     "valueOfTimeMultiplier" = {
-      #weights are needed for GCAM vehicle types that are mapped on the same EDGE-T vehicle type
+      # weights are needed for GCAM vehicle types that are mapped on the same EDGE-T vehicle type
       weight <- readSource("GCAM", subtype = "histESdemand")
       weight <- magpie2dt(weight)
-      #Speed is not differentiated between different technologies -> aggregate weights (ES demand)
+      # Speed is not differentiated between different technologies -> aggregate weights (ES demand)
       # to VehicleType level
       weight <- weight[, .(value = sum(value)),
                        by = c("region", "period", "sector", "subsector")]
       setnames(weight, "value", "esdem")
       setnames(dt, c("supplysector", "tranSubsector"), c("sector", "subsector"))
-      #data has no temporal resolution
+      # data has no temporal resolution
       dt[, year := NULL]
-      #Choose weight using ES demand for 2010
+      # Choose weight using ES demand for 2010
       weight <- weight[period == "2010"][, period := NULL]
       dt <- weight[dt, on = c("region", "sector", "subsector")]
       # some technologies have zero or no demand for certain countries
       #-> set to 1 so that they are equally considered
       dt[is.na(esdem) | esdem == 0, esdem := 1]
-      #GCAM data for speed of modes is not technology specific
+      # GCAM data for speed of modes is not technology specific
       mappingGCAM <- mappingGCAM[, c("GCAMtechnology", "technology") := NULL]
       mappingGCAM <- unique(mappingGCAM)
-      dt <- mappingGCAM[dt, on = c(GCAMsector = "sector", GCAMsubsector = "subsector"), allow.cartesian = TRUE]
+      dt <- mappingGCAM[dt, on = c(
+        GCAMsector = "sector", GCAMsubsector = "subsector", region = "region"
+      ), allow.cartesian = TRUE]
+
       dt <- dt[!is.na(univocalName)]
       dt <- dt[, .(value = sum(value * esdem) / sum(esdem)),
                by = c("region", "univocalName", "variable", "unit")]

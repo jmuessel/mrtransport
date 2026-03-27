@@ -17,8 +17,13 @@ toolPrepareUCD <- function(x, subtype) {
     UCD_sector <- size_class <- UCD_technology <- UCD_fuel <- fe <- size_class <- size.class <- NULL
 
   mapfile <- system.file("extdata", "mappingUCDtoEDGET.csv", package = "mrtransport", mustWork = TRUE)
-  mappingUCD <- fread(mapfile, skip = 0)
-  setkey(mappingUCD, UCD_sector, mode, size_class, UCD_technology, UCD_fuel)
+  mappingUCDraw <- fread(mapfile, skip = 0)
+  setkey(mappingUCDraw, UCD_sector, mode, size_class, UCD_technology, UCD_fuel)
+
+  #make mapping region specific and add additional mapping assumptions:
+  #introduce Rickshaws to "IND" if UCD values are being used
+  mappingUCD <- mappingUCDraw
+
   weight <- readSource("UCD", subtype = "feDemand")
   #fe data is given only for 2005
   weight <- magpie2dt(weight)[, c("unit", "period", "variable") := NULL]

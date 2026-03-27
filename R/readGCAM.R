@@ -9,12 +9,10 @@
 #' a <- readSource("GCAM", subtype = "histEDsemand")
 #' }
 #' @author Johnna Hoppe, Alois Dirnaichner
-#' @seealso \code{\link{readSource}}
+#' @seealso [madrat::readSource()]
 #' @import data.table
 #' @importFrom magclass as.magpie
 #' @importFrom magrittr `%>%`
-#' @export
-
 readGCAM <- function(subtype = c("energyIntensity",  "loadFactor", "histESdemand", "speedMotorized",
                                  "speedNonMotorized", "valueOfTimeMultiplier")) {
 

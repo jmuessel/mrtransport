@@ -9,7 +9,7 @@
 #' a <- readSource("EurostatEnergyCountryDataSheets")
 #' }
 #' @author Johanna Hoppe
-#' @seealso \code{\link{readSource}}
+#' @seealso [madrat::readSource()]
 #' @import data.table
 #' @importFrom magclass as.magpie
 #' @importFrom readxl read_excel

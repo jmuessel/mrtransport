@@ -9,14 +9,13 @@
 #' a <- readSource("UCD")
 #' }
 #' @author Johanna Hoppe, Alois Dirnaichner
-#' @seealso \code{\link{readSource}}
+#' @seealso [madrat::readSource()]
 #' @importFrom data.table fread
 #' @importFrom magclass getItems getSets getItems<- getSets<-
-#' @export
 #'
 convertUCD <- function(x, subtype) {
 
-  gdp <- calcOutput("GDP", scenario = "SSP2", naming = "scenario", aggregate = FALSE)[, getYears(x), ]
+  gdp <- calcOutput("GDP", scenario = "SSP2", aggregate = FALSE)[, getYears(x), ]
 
   UCD2isoMapFile <- system.file("extdata", "isoUCD.csv", package = "mrtransport", mustWork = TRUE)
   UCD2iso <- fread(UCD2isoMapFile, skip = 0)

@@ -9,12 +9,10 @@
 #' a <- readSource("PSI", subtype = "costs")
 #' }
 #' @author Johanna Hoppe
-#' @seealso \code{\link{readSource}}
+#' @seealso [madrat::readSource()]
 #' @import data.table
 #' @importFrom magclass getItems getItems<-
 #' @importFrom rmndt magpie2dt
-#' @export
-
 convertPSI <- function(x, subtype) {
   region <- NULL
 

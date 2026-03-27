@@ -2610,11 +2610,12 @@ IND;International Aviation;1
 IND;International Ship;1
 IND;Large Car;0
 IND;Large Car and SUV;1
+IND;Rickshaw;1
 IND;Midsize Car;0
 IND;Mini Car;1
 IND;Moped;1
 IND;Motorcycle (50-250cc);1
-IND;Motorcycle (>250cc);1
+IND;Motorcycle (>250cc);0
 IND;Passenger Rail;1
 IND;Subcompact Car;1
 IND;Truck (0-3_5t);1

@@ -9,11 +9,10 @@
 #' a <- readSource("UCD")
 #' }
 #' @author Johanna Hoppe, Alois Dirnaichner
-#' @seealso \code{\link{readSource}}
+#' @seealso [madrat::readSource()]
 #' @import data.table
 #' @importFrom magclass as.magpie
-#' @export
-
+#'
 readUCD <- function(subtype = c(
                                 "energyIntensity", "feDemand", "loadFactor", "annualMileage",
                                 "nonMotorizedDemand", "speed", "CAPEX", "nonFuelOPEX",

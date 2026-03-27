@@ -9,7 +9,7 @@
 #' a <- readSource("TRACCS")
 #' }
 #' @author Johanna Hoppe, Alois Dirnaichner
-#' @seealso \code{\link{readSource}}
+#' @seealso [madrat::readSource()]
 #' @importFrom magclass getItems getSets getItems<- getSets<-
 
 convertTRACCS <- function(x, subtype) {

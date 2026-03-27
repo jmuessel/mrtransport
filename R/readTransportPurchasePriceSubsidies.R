@@ -4,7 +4,7 @@
 #'
 #' @return magpie object of the transport subsidies for BEV, FCEV and PHEV (euros/car) for private and legal entities
 #' @author Caroline Cronjaeger
-#' @seealso \code{\link{readSource}}
+#' @seealso [madrat::readSource()]
 #' @examples
 #' \dontrun{ a <- readSource(type="TransportSubsidies")
 #' }
