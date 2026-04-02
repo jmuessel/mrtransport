@@ -11,7 +11,7 @@
 #' @return a quitte object
 
 toolAdjustEsDemand <- function(dt, mapIso2region, completeData, filter, histSourceData) {
-  variable <- period  <- unit <- value <-  demldv <- regionCode21 <-
+  variable <- period  <- unit <- value <-  demldv <- regionCode21 <-technology <-
     regionCode12 <- region <- univocalName <- NULL
 
   dt <- merge.data.table(dt, completeData[period <= 2010],
@@ -37,168 +37,128 @@ toolAdjustEsDemand <- function(dt, mapIso2region, completeData, filter, histSour
   dt[univocalName == "Cycle" & value == 0 & regionCode21 %in% c("IND", "CHN"), value := demldv * 0.02]
   dt[, demldv := NULL]
 
+
   #3: Correct truck size ES splits for CHA and JPN
-  #plausibilityFix_CHN #plausibilityFix_JPN #plausibilityFix_Truck #plausibilityFix_Freight
+  # #plausibilityFix_CHN #plausibilityFix_JPN #plausibilityFix_IND #plausibilityFix_Truck #plausibilityFix_Freight
+  # 
+  # Original GCAM input data has implausible truck size distributions:
+  #   - CHN/HKG/MAC: 95% of ES in 0-3.5t trucks (should be ~64% per CEIC data)
+  #   - JPN: 99.999% in 0-3.5t trucks (heavy-duty trucks essentially missing)
+  #   - IND: 55% in 0-3.5t trucks (should be ~35%) and 0% for Trucks between 7.5t and 40t (should be ~25%)
+  #
+  # Real-world target vehicle share (% of vehicle count, not % of tonne-km) used here:
+  #   CHN/HKG/MAC: 0-3.5t=76%, 7.5t=13%, 18t=5%, 26t=3%, 40t=3%
+  #   JPN:         0-3.5t=88%, 7.5t=9%,  18t=1%, 26t=1%, 40t=1%
+  #   IND:         0-3.5t=40%, 7.5t=35%, 18t=12%, 26t=10%, 40t=3%  
+  #
+  # These are compromise values: closer to real-world than GCAM defaults, but
+  # still producing reasonable 2010/2015 truck numbers given other input data
+  # constraints. Should be updated to real-world values once other inputs improve.
+  #
+  # Sources:
+  #   CEIC: https://www.ceicdata.com/en/china/no-of-motor-vehicle/cn-no-of-motor-vehicle-truck-heavy
+  #   Data/RegionalData/compiling_CHA_data_heavy_duty_vehicles.xlsx (cells V17:V21)
+  #   Data/RegionalData/compiling_JPN_data_heavy_duty_vehicles.xlsx
+  #   India specific sources can be`generally found in: /p/projects/edget/adjustmentDataFiles/IND_validation
+  #   Niti Aayog, RMI (2022): https://www.niti.gov.in/sites/default/files/2023-02/ZETReport09092022.pdf
+  #   Niti Aayog, RMI (2019): https://www.niti.gov.in/sites/default/files/2021-06/FreightReportNationalLevel.pdf
+  
+  REGIONS_TO_FIX <- c("CHN", "HKG", "MAC", "JPN", "IND")
+  TRUCK_SIZES    <- c("Truck (0-3_5t)", "Truck (7_5t)", "Truck (18t)", "Truck (26t)", "Truck (40t)")
 
-  ## Adjustments on truck size classes in CHN region according to newer data and model results
-  ## Treat HKG and MAC like CHN, as we have no data on their specific size split
-
-  ## when combining the input data ES values by size with the input data annualMileage and loadFactor, the following shares come out:
-  ## 40t 0.1%, 26t 0.4%, 18t 1.4%, 7.5t 3%, 0-3.5t 95%
-
-  ## The new data is based on downscaled values from CEIC data, https://www.ceicdata.com/en/china/no-of-motor-vehicle/cn-no-of-motor-vehicle-truck-heavy
-  ## It is further split to EDGE-T size classes : 40t	5%, 26t	9%, 18t	11%, 7.5t	11%, 0-3.5 t 64%
-  ## The original data and the further processing can be found in the transport folder in the owncloud:
-  ## "Data/RegionalData/compiling_CHA_data_heavy_duty_vehicles.xlsx", cells V17:V21
-
-  ## However, the real-world split produces too low truck numbers when combined with the rest of the input data (total ES, enIntensity, loadFactor, ...)
-  ## Therefore, the following values are used, which are closer to the real-world values than the original data from GCAM, and still produce reasonable 2010/2015 truck numbers
-  ## 40t 3%, 26t 3%, 18t 5%, 7.5t 13%, 0-3.5t 76%
-  ## When the rest of the input data is improved, this here should be changed to the real-world data as well.
-
-  ## Also the truck size data for JPN is overwritten, as our input data for JPN shows 99.999% of 0-3.5t trucks, while recent real-world data shows relevant numbers of heavy-duty trucks.
-  ## "Data/RegionalData/compiling_JPN_data_heavy_duty_vehicles.xlsx"
-  ## At the moment, the current vehicle size shares are:  (to be changed in the future once other input data is adjusted)
-  ## 40t 3%, 26t 3%, 18t 5%, 7.5t 13%, 0-3.5t 76%
-
-  # First step: define target vehicle shares by size:
-  VehSharesTargetSize <- data.table(univocalName = c("Truck (0-3_5t)", "Truck (18t)", "Truck (26t)", "Truck (40t)", "Truck (7_5t)"),
-                                    region = c(rep("CHN", 5), rep("HKG", 5), rep("MAC", 5), rep("JPN", 5)),
-                                    variable = "Share_in_Vehicles",
-                                    unit = "Percent",
-                                    value = c( rep(c(76, 5, 3, 3, 13), 3), c(88, 1, 1, 1, 9)))
-
-  # extract existing ES totals for regions and trucks of interest
-  histESdemandtoUpdate <- dt[region %in% c("CHN", "HKG", "MAC", "JPN") & univocalName %like% "Truck"]
-
-  histESdemandtoUpdateold <- histESdemandtoUpdate[    # drop variable and unit
-    , .(value = value),
-    by = .(region, univocalName, technology, period )
-  ]
-
-  histESdemandtoUpdateoldTotal <- histESdemandtoUpdateold[
-    , .(totalES = sum(value)),
-    by = .(region, period)
-  ]
-
-  ## for Japan, truck sizes > 3.5 are completely missing from the input data. This makes the later rescaling impossible.
-  ## Therefore, I overwrite them with 1e-4 * min(totalES) to have a basis for rescaling, without changing totalES relevantly.
-  ## The "min" ensures that really the smallest ES value in any of the observed regions is used, to ensure minimal change of totalES
-  MinEsValuePerSize = 1e-4 * min(histESdemandtoUpdateoldTotal$totalES)
-  histESdemandtoUpdateold[ region == "JPN" & univocalName %in% c("Truck (18t)", "Truck (40t)", "Truck (7_5t)", "Truck (26t)") & technology == "Liquids",
-                           value := MinEsValuePerSize ]
-
-  ## The same problem of zero-value entries holds true for CHA, but for CHA the technology split is more relevant,
-  ## as CHA has a relevant CNG truck fleet.
-  ## Therefore, the initialization is based on the technology split of 18t-trucks:
-
-  histESdemandtoUpdateold[region %in% c("CHN", "HKG", "MAC"), value := ifelse(univocalName == "Truck (26t)",
-                                                         value[univocalName == "Truck (18t)"] * 1e-4,
-                                                         value),
-     by = c("period", "region", "technology")]
-  histESdemandtoUpdateold[region %in% c("CHN", "HKG", "MAC"), value := ifelse(univocalName == "Truck (40t)",
-                                                         value[univocalName == "Truck (18t)"] * 1e-4,
-                                                         value),
-     by = c("period", "region", "technology")]
-
-
-  ## calculate totals by truck size and overall total truck ES
-
-  histESdemandtoUpdateoldSize <- histESdemandtoUpdateold[
-    , .(oldES = sum(value)),
-    by = .(region, univocalName, period)
-  ]
-
-  histESdemandtoUpdateoldTotal <- histESdemandtoUpdateold[
-    , .(totalES = sum(value)),
-    by = .(region, period)
-  ]
-
-  # calculate new ES splits
-
-  ## First calculate total tkm per vehicle from annual mileage and load factors.
-  ## Take the values for "Liquids", as that is the most common technology in 2010
-
-  annualTkmPerVehicle <- histSourceData$annualMileage[region %in% c("CHN", "HKG", "MAC", "JPN") & univocalName %like% "Truck" & period == 2010 & technology == "Liquids",
-                                                      .(annualMileage = value), by = .(region, univocalName)]
-
-  dtloadFactor <- histSourceData$loadFactor[region %in% c("CHN", "HKG", "MAC", "JPN") & univocalName %like% "Truck" & period == 2010 & technology == "Liquids",
-                                            .(loadFactor = loadFactor), by = .(region, univocalName)]
-
-  annualTkmPerVehicle <- merge(annualTkmPerVehicle, dtloadFactor,
-                               by = c("region", "univocalName"))
-
-  annualTkmPerVehicle[, ESperVeh := annualMileage * loadFactor ]
-
-
-  # calculate old truck shares per vehicle size as coming from the original input data
-
-  VehicleOverview <- merge(annualTkmPerVehicle, histESdemandtoUpdateoldSize [period == 2010],
-                           by = c("region", "univocalName"))
-
-  VehicleOverview[, NumOfTrucks := oldES / ESperVeh ]
-  VehicleOverview[, TotalNumOfTrucks := sum(NumOfTrucks), , by = region]
-  VehicleOverview[, ShareOfTruckSize := NumOfTrucks / TotalNumOfTrucks * 100, by = region]
-
-  ## calculate resulting ES values by size
-  ESSharesTargetSize <- merge(VehSharesTargetSize, annualTkmPerVehicle, by = c("region", "univocalName") )
-
-  ESSharesTargetSize[ , ESsharesUnnormalized := value / 100 * ESperVeh ]
-
-  ESSharesTargetSize[ , ESsharesNormalized := ESsharesUnnormalized / sum(ESsharesUnnormalized), by = region ]
-
-  ESSharesTargetSizeBack <- ESSharesTargetSize[ , .(univocalName = univocalName ,
-                                                    region = region,
-                                                    ESshare = ESsharesNormalized)
-  ]
-
-  # calculate target ES per vehicle size with old ES totals
-  ## First create new DT with period x univocalname size with the "allow.cartesian = TRUE, as SizeSharesTarget has no period, and histESdemandtoUpdateoldTotal no size
-
-  histESdemandtoUpdatetargetPerSize <- ESSharesTargetSizeBack[
-    histESdemandtoUpdateoldTotal,
-    on = "region",
-    allow.cartesian = TRUE
-  ]
-
-  histESdemandtoUpdatetargetPerSize[
-    , targetES := ESshare * totalES
-  ]
-
-  histESdemandtoUpdatetargetPerSize[ , targetES := ESshare * totalES ]
-
-  ## calculate scaling factors for each size
-  ESscaling <- merge(histESdemandtoUpdateoldSize, histESdemandtoUpdatetargetPerSize, by = c("period", "univocalName", "region") )
-
-  ESscaling[ , scaling := targetES / oldES ]
-
-  ## rescale using old ES totals:
-  histESdemandtoUpdatenewES <- merge(histESdemandtoUpdateold, ESscaling, by = c("period", "univocalName", "region") )
-
-  histESdemandtoUpdatenewES[, value := value * scaling ]
-
-  ## drop unused columns, add variable and unit
-  histESdemandtoUpdatenewES[, c("oldES", "ESshare", "totalES", "targetES", "scaling") := NULL][, ':='(variable = "ES", unit = "billion tkm/yr")]
-
-  ## check that the total new ES and the total old ES are unchanged:
-
-  setkey(histESdemandtoUpdatenewES,region)
-  setkey(histESdemandtoUpdateold,region)
-
-  stopifnot(
-    all.equal(
-      histESdemandtoUpdatenewES[, sum(value), by = .(period,region)],
-      histESdemandtoUpdateold[, sum(value), by = .(period,region)]
+  # Step 1: Define target vehicle count shares by size
+  # These are shares of *vehicle count*, not ES. ES shares are derived below
+  # by weighting by annual tkm per vehicle (mileage × load factor).
+  targetVehicleShares <- data.table(
+    univocalName = rep(TRUCK_SIZES, 4),
+    region       = rep(REGIONS_TO_FIX, each = 5),
+    value        = c(
+      rep(c(76, 13, 5, 3, 3), 3),  # CHN, HKG, MAC
+          c(88,  9, 1, 1, 1),       # JPN
+          c(40, 35, 12, 10, 3)     # IND
     )
   )
 
+  # Step 2: Extract current ES for trucks in affected regions 
+  currentES <- dt[region %in% REGIONS_TO_FIX & univocalName %like% "Truck",
+                  .(region, univocalName, technology, period, value)]
 
-  ## update the original dt - overwrite values for which there are new values in histESdemandtoUpdatenewES
-  setnames(histESdemandtoUpdatenewES, "value", "valueNew")
-  dt <- merge(dt, histESdemandtoUpdatenewES, by = intersect(names(dt), names(histESdemandtoUpdatenewES)), all.x = TRUE)
+  # Step 3: Initialize near-zero ES for size classes missing from input data
+  # JPN: HD trucks entirely absent → seed with a tiny value so rescaling works.
+  # CHN/HKG/MAC: 26t and 40t are zero → seed proportionally from 18t entries
+  #   (preserving the technology split, since CNG share matters for CHN).
+  # The seed values are negligible relative to total ES (factor 1e-4).
+  minTotalES <- min(currentES[, sum(value), by = .(region, period)]$V1)
+  seedValue  <- 1e-4 * minTotalES
+  
+  currentES[, allZero := all(value == 0), by = .(region, univocalName, period)]
+  currentES[allZero == TRUE, value := seedValue]
+  currentES[, allZero := NULL]
+
+  # For CHN/HKG/MAC, fill 26t and 40t ES based on 18t ES (preserving technology split)
+  currentES[region %in% c("CHN", "HKG", "MAC"),
+            value := ifelse(univocalName %in% c("Truck (26t)", "Truck (40t)"),
+                            value[univocalName == "Truck (18t)"] * 1e-4,
+                            value),
+            by = .(period, region, technology)]
+
+  # Step 4: Compute annual tkm per vehicle = mileage × load factor 
+  # Use 2010 Liquids values as the reference (dominant technology that year).
+
+  annualTkmPerVehicle <- merge(
+    histSourceData$annualMileage[region %in% REGIONS_TO_FIX & univocalName %like% "Truck" & period == 2010 & technology == "Liquids",
+                                .(region, univocalName, annualMileage = value)],
+    histSourceData$loadFactor[  region %in% REGIONS_TO_FIX & univocalName %like% "Truck" & period == 2010 & technology == "Liquids",
+                                .(region, univocalName, loadFactor)],
+    by = c("region", "univocalName")
+  )[, ESperVeh := annualMileage * loadFactor]
+
+  # Step 5: Convert target vehicle shares → target ES shares 
+  # ES share ∝ vehicle share × ES per vehicle. Normalise within each region.
+
+  targetESshares <- merge(targetVehicleShares, annualTkmPerVehicle,
+                          by = c("region", "univocalName"))
+
+  targetESshares[, ESshare := (value / 100) * ESperVeh]
+  targetESshares[, ESshare := ESshare / sum(ESshare), by = region]
+
+  targetESshares <- targetESshares[, .(region, univocalName, ESshare)]
+
+  #Step 6: Derive target ES per size, preserving regional totals 
+
+  totalESbyRegion <- currentES[, .(totalES = sum(value)), by = .(region, period)]
+
+  targetESbySize <- targetESshares[
+    totalESbyRegion, on = "region", allow.cartesian = TRUE
+  ][, targetES := ESshare * totalES]
+
+  # Step 7: Compute per-size scaling factors and rescale
+
+  currentESbySize <- currentES[, .(oldES = sum(value)), by = .(region, univocalName, period)]
+  scalingFactors <- currentESbySize[targetESbySize, 
+                                    on = c("region", "univocalName", "period"), 
+                                    nomatch = NULL
+    ][, scaling := targetES / oldES]
+  
+  updatedES <- merge(currentES, scalingFactors,
+                   by = c("region", "univocalName", "period"),
+                   all.x = TRUE
+  )[, value := value * scaling
+  ][, c("oldES", "ESshare", "totalES", "targetES", "scaling") := NULL
+  ][, ':='(variable = "ES", unit = "billion tkm/yr")]
+
+
+  # Step 8: Verify regional ES totals are unchanged
+  stopifnot(all.equal(
+    updatedES[, sum(value), by = .(period, region)],
+    currentES[, sum(value), by = .(period, region)]
+  ))
+
+# Step 9: Write updated values back to dt 
+
+  setnames(updatedES, "value", "valueNew")
+  dt <- merge(dt, updatedES, by = intersect(names(dt), names(updatedES)), all.x = TRUE)
   dt[!is.na(valueNew), value := valueNew][, valueNew := NULL]
-
-
 
   ###### also adjust car ES demands upwards to better reflect car stock numbers in 2010 and 2015
   ## (~62 mio in 2010, 140 mio in 2015 , eg IEA GEVO and others - see file in the owncloud "Data/RegionalData/compiling_CHA_data_LDV.xlsx",

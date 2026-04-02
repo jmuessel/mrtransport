@@ -61,10 +61,13 @@ toolAdjustAnnualMileage <- function(dt, completeData, filter, ariadneAdjustments
 
   # b) Annual Mileage for Trucks is missing completely - insert assumptions made by Alois in 2022
   # (probably from ARIADNE)
+  # Mar26 new adjustments based analysis in /p/projects/edget/adjustmentDataFiles/IND_validation
+  # Sources for 7_5t: CSTEP & ICCT: 30-50k km/yr, Phadke et al. 2019: 50+k km/yr --> assumption: 45k km/yr
+  # CSTEP: ##################
   annualMileageTrucks <- fread(
       text = "univocalName, annualMileage
               Truck (0-3_5t), 21500
-              Truck (7_5t), 34500
+              Truck (7_5t), 45000
               Truck (18t), 53000
               Truck (26t), 74000
               Truck (40t), 136500")
