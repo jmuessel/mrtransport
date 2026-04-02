@@ -49,7 +49,7 @@ toolAdjustEsDemand <- function(dt, mapIso2region, completeData, filter, histSour
   # Real-world target vehicle share (% of vehicle count, not % of tonne-km) used here:
   #   CHN/HKG/MAC: 0-3.5t=76%, 7.5t=13%, 18t=5%, 26t=3%, 40t=3%
   #   JPN:         0-3.5t=88%, 7.5t=9%,  18t=1%, 26t=1%, 40t=1%
-  #   IND:         0-3.5t=40%, 7.5t=35%, 18t=12%, 26t=10%, 40t=3%
+  #   IND:         0-3.5t=42%, 7.5t=29%, 18t=21%, 26t=6%, 40t=2%
   #
   # These are compromise values: closer to real-world than GCAM defaults, but
   # still producing reasonable 2010/2015 truck numbers given other input data
