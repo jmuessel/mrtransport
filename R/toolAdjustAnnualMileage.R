@@ -54,8 +54,8 @@ toolAdjustAnnualMileage <- function(dt, completeData, filter, ariadneAdjustments
   dt[, value := ifelse(is.na(value), mean(value, na.rm = TRUE), value),
      by = c("period", "technology", "univocalName")]
 
-  #missing Rickshaw data in India, with a first of estimate. To be refined in the future
-  #https://docs.wbcsd.org/2019/12/WBCSD_India_Business_Guide_to_EV_Adoption.pdf (2019)
+  # missing Rickshaw data in India, with a first of estimate. To be refined in the future
+  # https://docs.wbcsd.org/2019/12/WBCSD_India_Business_Guide_to_EV_Adoption.pdf (2019)
   dt[region == "IND" & univocalName == "Rickshaw", value := 15000]
   dt <- dt[period <= 2010, value := value[period == 2010], by = .(region, univocalName, variable, technology)]
 
@@ -65,7 +65,7 @@ toolAdjustAnnualMileage <- function(dt, completeData, filter, ariadneAdjustments
   # Sources for 7_5t: CSTEP & ICCT: 30-50k km/yr, Phadke et al. 2019: 50+k km/yr --> assumption: 45k km/yr
   # CSTEP: ##################
   annualMileageTrucks <- fread(
-      text = "univocalName, annualMileage
+                               text = "univocalName, annualMileage
               Truck (0-3_5t), 21500
               Truck (7_5t), 45000
               Truck (18t), 53000
@@ -77,7 +77,7 @@ toolAdjustAnnualMileage <- function(dt, completeData, filter, ariadneAdjustments
   # c) We do not have vintage tracking for the rest of the modes -> insert zeros
   # Later on it would be great to top up this data
   missingAnnualMileageData <- fread(
-              text = "univocalName, annualMileage
+                                    text = "univocalName, annualMileage
               International Aviation, 0
               Domestic Aviation, 0
               Passenger Rail, 0
