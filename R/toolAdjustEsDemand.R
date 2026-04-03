@@ -93,7 +93,7 @@ toolAdjustEsDemand <- function(dt, mapIso2region, completeData, filter, histSour
   seedValue  <- 1e-4 * minTotalES
 
   currentES[, allZero := all(value == 0), by = .(region, univocalName, period)]
-  currentES[allZero == TRUE, value := seedValue]
+  currentES[allZero == TRUE & technology == "Liquids", value := seedValue]
   currentES[, allZero := NULL]
 
   # For CHN/HKG/MAC, fill 26t and 40t ES based on 18t ES (preserving technology split)
