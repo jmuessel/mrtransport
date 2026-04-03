@@ -11,8 +11,9 @@
 #' @return a quitte object
 
 toolAdjustEsDemand <- function(dt, mapIso2region, completeData, filter, histSourceData) {
-  variable <- period  <- unit <- value <-  demldv <- regionCode21 <- technology <-
-    regionCode12 <- region <- univocalName <- NULL
+  variable <- period  <- unit <- value <-  demldv <- regionCode21 <- technology <- valueNew <- . <- 
+    regionCode12 <- region <- univocalName <- oldES <- totalES <- targetES <- ESshare <- ESperVeh <- 
+    loadFactor <- allZero <- NULL
 
   dt <- merge.data.table(dt, completeData[period <= 2010],
                          by = c("region", "period", "univocalName", "technology"), all = TRUE)

@@ -11,19 +11,20 @@
 
 toolAdjustAnnualMileage <- function(dt, completeData, filter, ariadneAdjustments = TRUE) {
   region <- value <- univocalName <- check <- unit <- variable <- annualMileage <- period <- technology <- meanValue <-
-    regionCode21 <- . <- NULL
+    regionCode21 <- regionCode12 <- . <- NULL
 
   ISOcountriesMap <- system.file("extdata", "regionmappingISOto21to12.csv", package = "mrtransport", mustWork = TRUE)
   ISOcountriesMap <- fread(ISOcountriesMap, skip = 0)
 
   # 1: Adjustments made by Johanna in consequence of the ARIADNE model intercomparison in 2026:
-  #    Introducing an annual mileage reduction due to the covid pandemic for EUR countries to match rising vehicle stock reported by EU pocketbook data even with demand dip.
-  #    source that documents annual mileage dip due to covid-pandemic: Odyssee-Mure "after a sharp decrease in 2020 in most countries (-13% at EU level)"
-  #    For now we do not assume a mileage recovery in the years after 2020 (as reported by Odyssee-Mure), because we do no cover the energy service demand
-  #    dynamics yet sufficiently (increases again after 2022).
-  #    To get closer to the reported vehicle stock increase (EU pocket book data) we keep the annual mileage reduction
+  # Introducing an annual mileage reduction due to the covid pandemic for EUR countries to match rising vehicle stock reported by EU pocketbook data even with demand dip.
+  # source that documents annual mileage dip due to covid-pandemic: Odyssee-Mure "after a sharp decrease in 2020 in most countries (-13% at EU level)"
+  # For now we do not assume a mileage recovery in the years after 2020 (as reported by Odyssee-Mure), because we do no cover the energy service demand
+  # dynamics yet sufficiently (increases again after 2022).
+  # To get closer to the reported vehicle stock increase (EU pocket book data) we keep the annual mileage reduction
   if (ariadneAdjustments) {
-    dt[period >= 2020 & region %in% ISOcountriesMap[regionCode12 == "EUR"]$countryCode & univocalName %in% filter$trn_pass_road_LDV_4W, value := value * 0.87]
+    dt[period >= 2020 & region %in% ISOcountriesMap[regionCode12 == "EUR"
+    ]$countryCode & univocalName %in% filter$trn_pass_road_LDV_4W, value := value * 0.87]
   }
   # 2: Assume missing data
   # a) Some modes and technologies are missing an annual mileage
