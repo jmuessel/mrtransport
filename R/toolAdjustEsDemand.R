@@ -11,9 +11,9 @@
 #' @return a quitte object
 
 toolAdjustEsDemand <- function(dt, mapIso2region, completeData, filter, histSourceData) {
-  variable <- period  <- unit <- value <-  demldv <- regionCode21 <- technology <- valueNew <- . <- 
-    regionCode12 <- region <- univocalName <- oldES <- totalES <- targetES <- ESshare <- ESperVeh <- 
-    loadFactor <- allZero <- NULL
+  variable <- period  <- unit <- value <-  demldv <- regionCode21 <- technology <- valueNew <- . <-
+    regionCode12 <- region <- univocalName <- oldES <- totalES <- targetES <- ESshare <- ESperVeh <-
+    loadFactor <- allZero <- annualMileage <- scaling <- NULL
 
   dt <- merge.data.table(dt, completeData[period <= 2010],
                          by = c("region", "period", "univocalName", "technology"), all = TRUE)
@@ -58,8 +58,8 @@ toolAdjustEsDemand <- function(dt, mapIso2region, completeData, filter, histSour
   #
   # Sources:
   #   CEIC: https://www.ceicdata.com/en/china/no-of-motor-vehicle/cn-no-of-motor-vehicle-truck-heavy
-  #   Data/RegionalData/compiling_CHA_data_heavy_duty_vehicles.xlsx (cells V17:V21)
-  #   Data/RegionalData/compiling_JPN_data_heavy_duty_vehicles.xlsx
+  #   Data/RegionalData/compiling_CHA_data_heavy_duty_vehicles.xlsx (cells V17:V21, CHA)
+  #   Also for Data/RegionalData/compiling_JPN_data_heavy_duty_vehicles.xlsx
   #   India specific sources can be`generally found in: /p/projects/edget/adjustmentDataFiles/IND_validation
   #   Niti Aayog, RMI (2022): https://www.niti.gov.in/sites/default/files/2023-02/ZETReport09092022.pdf
   #   Niti Aayog, RMI (2019): https://www.niti.gov.in/sites/default/files/2021-06/FreightReportNationalLevel.pdf
@@ -107,10 +107,12 @@ toolAdjustEsDemand <- function(dt, mapIso2region, completeData, filter, histSour
   # Use 2010 Liquids values as the reference (dominant technology that year).
 
   annualTkmPerVehicle <- merge(
-    histSourceData$annualMileage[region %in% REGIONS_TO_FIX & univocalName %like% "Truck" & period == 2010 & technology == "Liquids",
-                                 .(region, univocalName, annualMileage = value)],
-    histSourceData$loadFactor[region %in% REGIONS_TO_FIX & univocalName %like% "Truck" & period == 2010 & technology == "Liquids",
-                              .(region, univocalName, loadFactor)],
+    histSourceData$annualMileage[
+                                 region %in% REGIONS_TO_FIX & univocalName %like% "Truck" & period == 2010 &
+                                   technology == "Liquids", .(region, univocalName, annualMileage = value)],
+    histSourceData$loadFactor[
+                              region %in% REGIONS_TO_FIX & univocalName %like% "Truck" & period == 2010 &
+                                technology == "Liquids", .(region, univocalName, loadFactor)],
     by = c("region", "univocalName")
   )[, ESperVeh := annualMileage * loadFactor]
 
@@ -161,12 +163,14 @@ toolAdjustEsDemand <- function(dt, mapIso2region, completeData, filter, histSour
   dt <- merge(dt, updatedES, by = intersect(names(dt), names(updatedES)), all.x = TRUE)
   dt[!is.na(valueNew), value := valueNew][, valueNew := NULL]
 
-  ###### also adjust car ES demands upwards to better reflect car stock numbers in 2010 and 2015
-  ## (~62 mio in 2010, 140 mio in 2015 , eg IEA GEVO and others - see file in the owncloud "Data/RegionalData/compiling_CHA_data_LDV.xlsx",
-  ## Increasing the ES values means that more cars are on the road, but also that 2010 FE demand BEFORE the IEA calibration is higher - thus preventing
-  ## the strong upscaling of energy intensities during the IEA FE calibration that was previously the case.
-  ## The multipliers are staggered (reducing from 2.5 in 2010 to 1.5 in 2005) to represent the fast growth of LDV numbers over these 5 years.
-  ## The 2.5 multiplier in 2010 is a compromise betwen hitting 2010 and 2015 numbers: 2010 85 mio instead of 62 mio, 2015 125 mio instead of 140 mio
+  # Also adjust car ES demands upwards to better reflect car stock numbers in 2010 and 2015
+  # (~62 mio in 2010, 140 mio in 2015 , eg IEA GEVO and others - see file in the owncloud
+  # "Data/RegionalData/compiling_CHA_data_LDV.xlsx", Increasing the ES values means that more
+  # cars are on the road, but also that 2010 FE demand BEFORE the IEA calibration is higher
+  # - thus preventing the strong upscaling of energy intensities during the IEA FE calibration that was
+  # previously the case. The multipliers are staggered (reducing from 2.5 in 2010 to 1.5 in 2005) to represent
+  # the fast growth of LDV numbers over these 5 years. The 2.5 multiplier in 2010 is a compromise betwen hitting
+  # 2010 and 2015 numbers: 2010 85 mio instead of 62 mio, 2015 125 mio instead of 140 mio
   # plausibilityFix_CHN #plausibilityFix_LDV #plausibilityFix_Pass
 
   carTypes <- c("Compact Car", "Large Car", "Large Car and SUV", "Midsize Car", "Mini Car", "Subcompact Car", "Van")
@@ -203,7 +207,8 @@ toolAdjustEsDemand <- function(dt, mapIso2region, completeData, filter, histSour
   dt[period <= 2010 & regionCode21 == "CHN" & univocalName %in% filter$trn_freight_road, value := value * 3]
 
   # 4: Demand level corrections, adjusting to ETP demands
-  # plausibilityFix_CHN #plausibilityFix_Bus #plausibilityFix_Pass   #plausibilityFix_IND #plausibilityFix_OAS #plausibilityFix_NEU #plausibilityFix_MEA
+  # #plausibilityFix_CHN #plausibilityFix_Bus #plausibilityFix_Pass #plausibilityFix_IND
+  # #plausibilityFix_OAS #plausibilityFix_NEU #plausibilityFix_MEA
   dt[regionCode21 == "CHA" & univocalName == "Bus", value := value / 2.5]
   dt[regionCode21 == "IND" & univocalName == "Bus", value := value / 2]
   dt[regionCode21 == "OAS" & univocalName == "Bus", value := value / 5]

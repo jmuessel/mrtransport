@@ -17,14 +17,17 @@ toolAdjustAnnualMileage <- function(dt, completeData, filter, ariadneAdjustments
   ISOcountriesMap <- fread(ISOcountriesMap, skip = 0)
 
   # 1: Adjustments made by Johanna in consequence of the ARIADNE model intercomparison in 2026:
-  # Introducing an annual mileage reduction due to the covid pandemic for EUR countries to match rising vehicle stock reported by EU pocketbook data even with demand dip.
-  # source that documents annual mileage dip due to covid-pandemic: Odyssee-Mure "after a sharp decrease in 2020 in most countries (-13% at EU level)"
-  # For now we do not assume a mileage recovery in the years after 2020 (as reported by Odyssee-Mure), because we do no cover the energy service demand
+  # Introducing an annual mileage reduction due to the covid pandemic for EUR countries to match rising vehicle stock
+  # reported by EU pocketbook data even with demand dip.
+  # source that documents annual mileage dip due to covid-pandemic: Odyssee-Mure "after a sharp decrease in 2020 in
+  # most countries (-13% at EU level)"
+  # For now we do not assume a mileage recovery in the years after 2020 (as reported by Odyssee-Mure), because we
+  # do no cover the energy service demand
   # dynamics yet sufficiently (increases again after 2022).
   # To get closer to the reported vehicle stock increase (EU pocket book data) we keep the annual mileage reduction
   if (ariadneAdjustments) {
     dt[period >= 2020 & region %in% ISOcountriesMap[regionCode12 == "EUR"
-    ]$countryCode & univocalName %in% filter$trn_pass_road_LDV_4W, value := value * 0.87]
+       ]$countryCode & univocalName %in% filter$trn_pass_road_LDV_4W, value := value * 0.87]
   }
   # 2: Assume missing data
   # a) Some modes and technologies are missing an annual mileage
@@ -43,10 +46,11 @@ toolAdjustAnnualMileage <- function(dt, completeData, filter, ariadneAdjustments
   dt <- dt[!is.na(check)]
   # update variable and unit for introduced NAs
   dt[, unit := mileageUnit][, variable := "Annual mileage"][, check := NULL]
-  # By averaging the annual mileage over gases and liquids vehicles to fill gaps for BEVs, BEVs get a higher annual mileage than the ICE cars
+  # By averaging the annual mileage over gases and liquids vehicles to fill gaps for BEVs, BEVs get a higher
+  # annual mileage than the ICE cars
   # Fixing that only for EUR countries for now
-  dt[region %in% ISOcountriesMap[regionCode12 == "EUR"]$countryCode, value := ifelse(is.na(value), value[technology == "Liquids"], value),
-     by = c("period", "univocalName", "region")]
+  dt[region %in% ISOcountriesMap[regionCode12 == "EUR"]$countryCode,
+     value := ifelse(is.na(value), value[technology == "Liquids"], value), by = c("period", "univocalName", "region")]
 
   dt[, value := ifelse(is.na(value), mean(value, na.rm = TRUE), value),
      by = c("period", "univocalName", "region")]
