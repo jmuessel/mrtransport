@@ -1,6 +1,6 @@
 Package: mrtransport
 Title: Input data generation for the EDGE-Transport model
-Version: 0.16.4
+Version: 0.17.1
 Authors@R: c(
     person("Johanna", "Hoppe", , "johanna.hoppe@pik-potsdam.de", role = c("aut", "cre"),
            comment = c(ORCID = "0009-0004-6753-5090")),
@@ -22,7 +22,7 @@ Imports:
     data.table,
     dplyr,
     GDPuc (>= 1.3.0),
-    gdx,
+    gdx2,
     magclass,
     magrittr,
     readxl,
@@ -33,6 +33,5 @@ Imports:
     tidyselect,
     utils,
     zoo
-Date: 2026-07-03
-Config/roxygen2/version: 8.0.0
-RoxygenNote: 7.3.3
+Date: 2026-09-07
+Config/roxygen2/version: 8.1.0

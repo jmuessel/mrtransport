@@ -12,24 +12,30 @@ import(data.table)
 import(madrat)
 import(mrcommonsenergy)
 import(mrdrivers)
-importFrom(data.table,data.table)
-importFrom(data.table,fread)
-importFrom(data.table,merge.data.table)
-importFrom(magclass,"getItems<-")
-importFrom(magclass,"getNames<-")
-importFrom(magclass,"getSets<-")
-importFrom(magclass,as.magpie)
-importFrom(magclass,dimSums)
-importFrom(magclass,getItems)
-importFrom(magclass,getNames)
-importFrom(magclass,getSets)
-importFrom(magclass,getYears)
-importFrom(magclass,mbind)
-importFrom(magclass,setComment)
-importFrom(magclass,setNames)
-importFrom(magclass,time_interpolate)
+importFrom(data.table,
+  data.table,
+  fread,
+  merge.data.table
+)
+importFrom(magclass,
+  "getItems<-",
+  "getNames<-",
+  "getSets<-",
+  as.magpie,
+  dimSums,
+  getItems,
+  getNames,
+  getSets,
+  getYears,
+  mbind,
+  setComment,
+  setNames,
+  time_interpolate
+)
 importFrom(magrittr,`%>%`)
 importFrom(readxl,read_excel)
 importFrom(rlang,.data)
-importFrom(rmndt,approx_dt)
-importFrom(rmndt,magpie2dt)
+importFrom(rmndt,
+  approx_dt,
+  magpie2dt
+)

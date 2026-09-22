@@ -2,8 +2,8 @@ cff-version: 1.2.0
 message: If you use this software, please cite it using the metadata from this file.
 type: software
 title: 'mrtransport: Input data generation for the EDGE-Transport model'
-version: 0.16.4
-date-released: '2026-07-03'
+version: 0.17.1
+date-released: '2026-09-07'
 abstract: The mrtransport package contains data preprocessing for the EDGE-Transport
   model.
 authors:

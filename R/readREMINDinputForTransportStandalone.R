@@ -4,15 +4,18 @@
 #' @param subtype Either "fuelCosts" or "esDemand"
 #'
 readREMINDinputForTransportStandalone <- function(subtype) {
-  gdxPath <- file.path("v1.2", "fulldata.gdx")
+  gdxPath <- file.path("v1.3", "fulldata.gdx")
 
   if (subtype == "fuelCosts") {
-    out <- gdx::readGDX(gdxPath, "pm_FEPrice",
+    out <- gdx2::readGDX(gdxPath, "pm_FEPrice",
       format = "first_found",
-      restore_zeros = FALSE
+      restoreZeros = FALSE
     )[, , "trans.ES", pmatch = TRUE]
   } else if (subtype == "esDemand") {
-    out <- gdx::readGDX(gdxPath, c("vm_cesIO"), field = "l", restore_zeros = FALSE)
+    out <- gdx2::readGDX(gdxPath, c("vm_cesIO"),
+      select = list("_field" = "level"),
+      restoreZeros = FALSE
+    )
   } else {
     stop("Invalid subtype. Must be either 'fuelCosts' or 'edDemand'")
   }
