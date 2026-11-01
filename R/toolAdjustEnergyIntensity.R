@@ -216,7 +216,7 @@ toolAdjustEnergyIntensity <- function(dt, regionTRACCS, TrendsEnIntPSI, filter, 
   # Rickshaws are assumed to have the same as Motorcycle (50-250cc) BEV
   # IND cross-check: 0.21 MJ/vehkm (2010); CEEW (2025c) Table 2: electric passenger three-wheeler 15 km/kWh =
   # 0.24 MJ/vehkm; 14% difference,kept for now
-  # SourceID: S26; .../Input/papers/trucks/T26_CEEW_2025_vehicleOwnershipCosts.pdf)
+  # SourceID: S26 (EDGETassumptions README.txt, section 8)
   alternativeRickshawTech <- dt[univocalName == "Motorcycle (50-250cc)" &
                                   technology %in% c("BEV") & region %in% dt[univocalName == "Rickshaw"]$region]
   alternativeRickshawTech[, univocalName := "Rickshaw"]
