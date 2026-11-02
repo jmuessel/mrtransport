@@ -10,11 +10,11 @@ readEDGETassumptions(subtype = "v1")
 \item{subtype}{version folder of the table, e.g. "v1"}
 }
 \value{
-data.frame with one row per value and the columns id, region, variable, univocalName,
+data.table with one row per value and the columns id, region, variable, univocalName,
 technology, period, value, unit, status, derivation, sources
 }
 \description{
-Read-in the table of IND-specific assumptions used in the toolAdjust* functions as data.frame
+Read-in the table of IND-specific assumptions used in the toolAdjust* functions as data.table
 }
 \examples{
 \dontrun{ a <- readSource(type = "EDGETassumptions", subtype = "v1", convert = FALSE)
