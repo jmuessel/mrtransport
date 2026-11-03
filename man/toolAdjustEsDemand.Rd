@@ -16,8 +16,9 @@ toolAdjustEsDemand(dt, mapIso2region, completeData, filter, histSourceData)
 \item{filter}{list of filters for specific branches in the upper decision tree, containing all associated
 univocalNames}
 
-\item{histSourceData}{the full source data containing the annual mileage and load factor; their 2010 Liquids
-values turn the target truck vehicle shares of step 3 into tkm shares}
+\item{histSourceData}{the full source data; annual mileage and load factor (2010 Liquids) turn the target
+truck vehicle shares of step 3 into tkm shares; energy intensity and load factor are used by
+\code{\link[=toolAdjustEsDemandIndia]{toolAdjustEsDemandIndia()}}}
 }
 \value{
 a quitte object with the adjusted energy service demand in billion pkm/yr and billion tkm/yr
@@ -31,17 +32,7 @@ India (IND), values by assumption ID from the EDGETassumptions source (\code{\li
 \itemize{
 \item Truck size split (step 3, A21): Vehicle shares derived from Indian stock and sales data replace previous
 assumptions
-\item Bus demand (step 7b, A22): 2010 bus pkm derived from India's pre-COVID bus use benchmarked against China at the
-same income; replaces a factor 1/2 in step 4
-\item Road demand (step 7b, A23, A24): passenger road = buses + 2-4-wheelers (as before); road freight from the IEA's
-published 2010 total; applied to 2005-2010; replace a factor 1.4 on all IND demand (step 7a)
-\item Domestic shipping and aviation (step 7b, A25, A26): published 2010 activity (RITES, DGCA)
-\item Bus technologies (step 7b, A27): share of the 2005-2010 bus pkm on gas (CNG share of the registered buses, TERI)
-\item Road demand 1990 (step 7c): computed so that the 1990 IEA harmonization factor equals the 2005 one; not an
-estimate of the 1990 activity
-\item Check (step 7d): warns when the aviation intensity factor of toolAdjustEnergyIntensity() no longer fits
-\item Status, derivation and sources of each value are in the table, references and PDF paths in README.txt of the
-source.
+\item All other adjustments (step 7): \code{\link[=toolAdjustEsDemandIndia]{toolAdjustEsDemandIndia()}}
 }
 }
 \author{

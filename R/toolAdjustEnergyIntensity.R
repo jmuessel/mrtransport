@@ -3,16 +3,7 @@
 #' Applies trends, corrections and gap fills to the raw energy intensities (TRACCS, GCAM, PSI) and sets values for
 #' single regions and modes.
 #'
-#' @details India (IND), values by assumption ID from the EDGETassumptions source ([toolGetAssumption()])
-#' - Trucks (step 2b, A13, A14): Ratios between classes from published Indian fleet values replace PSI's European
-#'   ratios
-#' - Domestic aviation (step 2c, A15, A16): factor so that the harmonized 2010 fuel use equals the IEA's; after 2010
-#'   a further factor falling to 2019, so that 2019 equals the IEA's fuel use over DGCA's activity
-#' - Cars, two-, three-wheelers and buses (step 2d, A17, A18): Liquids scaled to Indian survey fuel economy in 2010
-#' - Trucks (step 2e, A19): trend after 2020 instead of PSI's European trend
-#' - BEV cars and two-wheelers (step 3h, A20, A18): scaled to Indian real-world values in 2025
-#' - Status, derivation and sources of each value are in the table, references and PDF paths in README.txt of the
-#'   source.
+#' @details India (IND): steps 2b and 3h call [toolAdjustEnergyIntensityIndia()], which documents the assumptions.
 #'
 #' @author Johanna Hoppe, Jarusch Muessel
 #' @param dt calculated raw data without adjustments
@@ -29,9 +20,8 @@
 #' @import data.table
 
 toolAdjustEnergyIntensity <- function(dt, regionTRACCS, TrendsEnIntPSI, filter, ariadneAdjustments = TRUE) {
-  region <- technology <- period <- value  <- region   <- TRACCS <-
-    enIntLargeCarSUV <- univocalName <- meanValue <- regionCode21 <- target <- vkmShare <- psi <- scaling <- raw <-
-    group <- . <- NULL
+  region <- technology <- period <- value <- TRACCS <- enIntLargeCarSUV <- univocalName <- meanValue <-
+    regionCode21 <- NULL
 
   # To complete dataset and ensure consistency and actuality a number of fixes are applied on the raw source data
   # 1: PSI trends in energyitensity are applied to TRACCS car and trucks data [TRACCS data only available until 2010]
@@ -87,72 +77,10 @@ toolAdjustEnergyIntensity <- function(dt, regionTRACCS, TrendsEnIntPSI, filter, 
        value := value * 4.7 / 4.4]
   }
 
-  # 2b: Ratios between the truck classes in India #plausibilityFix_IND #plausibilityFix_Truck #plausibilityFix_Freight
-  # A13, A14: target ratios (A13) at PSI's vkm-weighted (A14) mean in 2010, all years, Liquids and Gases
-  trucksIND <- data.table(univocalName = c("Truck (0-3_5t)", "Truck (7_5t)", "Truck (18t)", "Truck (26t)",
-                                           "Truck (40t)"))
-  trucksIND[, target := toolGetAssumption("A13")[univocalName]]
-  trucksIND[, vkmShare := toolGetAssumption("A14")[univocalName]]
-  nTrucksIND <- nrow(trucksIND)
-  trucksIND <- merge(trucksIND, dt[region == "IND" & period == 2010 & technology == "Liquids",
-                                   .(univocalName, psi = value)], by = "univocalName")
-  if (nrow(trucksIND) != nTrucksIND || anyNA(trucksIND)) {
-    stop("IND truck energy intensities (PSI, Liquids, 2010) are incomplete")
-  }
-  trucksIND[, scaling := target * sum(vkmShare * psi) / sum(vkmShare * target) / psi]
-  scalingIND <- setNames(trucksIND$scaling, trucksIND$univocalName)
-  dt[region == "IND" & univocalName %in% names(scalingIND) & technology %in% c("Liquids", "Gases"),
-     value := value * scalingIND[univocalName]]
-
-  # 2c: Domestic aviation in India #plausibilityFix_IND #plausibilityFix_Pass
-  # A15: factor so that the harmonized 2010 fuel equals the IEA's, all years, Liquids (before 3a: hydrogen follows)
-  dt[region == "IND" & univocalName == "Domestic Aviation" & technology == "Liquids",
-     value := value * toolGetAssumption("A15")[["Domestic Aviation"]]]
-  # A16: further factor, linear between its 2010 and 2019 values, constant afterwards; GCAM's trend continues on top
-  aviationIND <- toolGetAssumption("A16", by = "period")
-  dt[region == "IND" & univocalName == "Domestic Aviation" & technology == "Liquids" & period > 2010,
-     value := value * pmax(aviationIND[["2019"]],
-                           aviationIND[["2010"]] - (aviationIND[["2010"]] - aviationIND[["2019"]]) *
-                             (period - 2010) / 9)]
-
-  # India, used in 2d and 3h: one factor per group of classes (names: classes, values: groups), so that the
-  # vkm-weighted (A18) mean in `year` equals the group's target; ratios between the classes and the trend stay
-  scaleGroupsIND <- function(dt, groups, targetID, tech, year) {
-    groupsIND <- data.table(univocalName = names(groups), group = unname(groups))
-    groupsIND[, target := toolGetAssumption(targetID)[group]]
-    groupsIND[, vkmShare := toolGetAssumption("A18")[univocalName]]
-    groupsIND <- merge(groupsIND, dt[region == "IND" & period == year & technology == tech,
-                                     .(univocalName, raw = value)], by = "univocalName")
-    if (nrow(groupsIND) != length(groups) || anyNA(groupsIND)) {
-      stop("IND energy intensities (", tech, ", ", year, ") are incomplete")
-    }
-    groupsIND[, scaling := target * sum(vkmShare) / sum(vkmShare * raw), by = "group"]
-    factors <- setNames(groupsIND$scaling, groupsIND$univocalName)
-    dt[region == "IND" & univocalName %in% names(factors) & technology == tech,
-       value := value * factors[univocalName]]
-    dt
-  }
-  ldvGroupsIND <- c("Mini Car" = "trn_pass_road_LDV_4W", "Subcompact Car" = "trn_pass_road_LDV_4W",
-                    "Compact Car" = "trn_pass_road_LDV_4W", "Large Car and SUV" = "trn_pass_road_LDV_4W",
-                    "Moped" = "trn_pass_road_LDV_2W", "Motorcycle (50-250cc)" = "trn_pass_road_LDV_2W")
-
-  # 2d: Cars, two-wheelers, three-wheelers and buses in India #plausibilityFix_IND #plausibilityFix_Pass
-  # A17, A18: Liquids scaled per group so that the 2010 vkm-weighted (A18) mean equals the survey value (A17)
-  dt <- scaleGroupsIND(dt, c(ldvGroupsIND, "Rickshaw" = "Rickshaw", "Bus" = "Bus"), "A17", "Liquids", 2010)
-
-  # 2e: Trend of the truck intensities in India #plausibilityFix_IND #plausibilityFix_Truck #plausibilityFix_Freight
-  # A19: from 2020, Liquids and Gases held to the first A19 year, then x A19 per year to the last, constant after
-  trendIND <- toolGetAssumption("A19", by = "period")
-  trendYearsIND <- as.numeric(strsplit(names(trendIND), "-")[[1]])
-  trendTruckIND <- function(period) {
-    trendIND[[1]]^(pmin(pmax(period, trendYearsIND[1]), trendYearsIND[2]) - trendYearsIND[1])
-  }
-  if (nrow(dt[region == "IND" & univocalName %in% names(scalingIND) & technology %in% c("Liquids", "Gases") &
-                period == 2020]) != 2 * nTrucksIND) {
-    stop("IND truck energy intensities (Liquids, Gases, 2020) are incomplete")
-  }
-  dt[region == "IND" & univocalName %in% names(scalingIND) & technology %in% c("Liquids", "Gases") & period >= 2020,
-     value := value[period == 2020] * trendTruckIND(period), by = c("univocalName", "technology")]
+  # 2b: India #plausibilityFix_IND
+  # Trucks, domestic aviation, cars, two-, three-wheelers and buses (Liquids, Gases); before step 3, as the
+  # hydrogen aircraft copies the liquids aircraft there
+  dt <- toolAdjustEnergyIntensityIndia(dt, step = "Liquids")
 
   # 3: Assume missing data
   # a) Hydrogen airplanes are not covered by our datasources
@@ -223,9 +151,8 @@ toolAdjustEnergyIntensity <- function(dt, regionTRACCS, TrendsEnIntPSI, filter, 
   dt <- rbind(dt, alternativeRickshawTech)
 
   # h) BEV cars and two-wheelers in India #plausibilityFix_IND #plausibilityFix_Pass
-  # A20, A18: BEV scaled per group so that the 2025 vkm-weighted (A18) mean equals the real-world value (A20)
   # After 3g, so that the rickshaw keeps the motorcycle's BEV value from before this step.
-  dt <- scaleGroupsIND(dt, ldvGroupsIND, "A20", "BEV", 2025)
+  dt <- toolAdjustEnergyIntensityIndia(dt, step = "BEV")
 
   # 4: adjustments for scenarioMIP validation: adjust outliers to global mean
   ISOcountriesMap <- system.file("extdata", "regionmappingISOto21to12.csv", package = "mrtransport", mustWork = TRUE)

@@ -33,18 +33,7 @@ Applies trends, corrections and gap fills to the raw energy intensities (TRACCS,
 single regions and modes.
 }
 \details{
-India (IND), values by assumption ID from the EDGETassumptions source (\code{\link[=toolGetAssumption]{toolGetAssumption()}})
-\itemize{
-\item Trucks (step 2b, A13, A14): Ratios between classes from published Indian fleet values replace PSI's European
-ratios
-\item Domestic aviation (step 2c, A15, A16): factor so that the harmonized 2010 fuel use equals the IEA's; after 2010
-a further factor falling to 2019, so that 2019 equals the IEA's fuel use over DGCA's activity
-\item Cars, two-, three-wheelers and buses (step 2d, A17, A18): Liquids scaled to Indian survey fuel economy in 2010
-\item Trucks (step 2e, A19): trend after 2020 instead of PSI's European trend
-\item BEV cars and two-wheelers (step 3h, A20, A18): scaled to Indian real-world values in 2025
-\item Status, derivation and sources of each value are in the table, references and PDF paths in README.txt of the
-source.
-}
+India (IND): steps 2b and 3h call \code{\link[=toolAdjustEnergyIntensityIndia]{toolAdjustEnergyIntensityIndia()}}, which documents the assumptions.
 }
 \author{
 Johanna Hoppe, Jarusch Muessel

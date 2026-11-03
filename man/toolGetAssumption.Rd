@@ -4,10 +4,12 @@
 \alias{toolGetAssumption}
 \title{Get an assumption by ID}
 \usage{
-toolGetAssumption(id, by = "univocalName", ...)
+toolGetAssumption(id, region = "IND", by = "univocalName", ...)
 }
 \arguments{
-\item{id}{assumption ID, e.g. "A01"}
+\item{id}{assumption ID, e.g. "A01"; unique within the region's table only}
+
+\item{region}{ISO3 code of the region whose table is read (subtype of the source), default "IND"}
 
 \item{by}{column used for the names of the result}
 
@@ -20,7 +22,8 @@ named numeric vector of the values, named by column \code{by}
 Look up the values of one assumption in the EDGETassumptions source.
 }
 \details{
-Source: EDGETassumptions v1 (README.txt in the source folder).
+Source: EDGETassumptions v1 (README.txt in the source folder, assumptions\if{html}{\out{<region>}}.txt in the
+version folder for the single assumptions).
 }
 \author{
 Jarusch Muessel
