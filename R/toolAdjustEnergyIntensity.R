@@ -1,7 +1,11 @@
 #' Perform parameter specific adjustments on the input data
 #'
+#' Applies trends, corrections and gap fills to the raw energy intensities (TRACCS, GCAM, PSI) and sets values for
+#' single regions and modes.
 #'
-#' @author Johanna Hoppe
+#' @details India (IND): steps 2b and 3h call [toolAdjustEnergyIntensityIndia()], which documents the assumptions.
+#'
+#' @author Johanna Hoppe, Jarusch Muessel
 #' @param dt calculated raw data without adjustments
 #' @param regionTRACCS iso countries included in TRACCS database
 #' @param TrendsEnIntPSI Energy intensity trends from PSI
@@ -9,14 +13,15 @@
 #' univocalNames
 #' @param ariadneAdjustments optional parameter adjustements according to ARIADNE model intercomparison in 2022
 #'
-#' @return a quitte object
+#' @return a quitte object with the adjusted raw energy intensities in MJ/vehkm, from 2005 on (earlier years are
+#' set to the 2005 values in step 5)
 #'
 #' @importFrom rmndt magpie2dt
 #' @import data.table
 
 toolAdjustEnergyIntensity <- function(dt, regionTRACCS, TrendsEnIntPSI, filter, ariadneAdjustments = TRUE) {
-  region <- technology <- period <- value  <- region   <- TRACCS <-
-    enIntLargeCarSUV <- univocalName <- meanValue <- regionCode21 <- NULL
+  region <- technology <- period <- value <- TRACCS <- enIntLargeCarSUV <- univocalName <- meanValue <-
+    regionCode21 <- NULL
 
   # To complete dataset and ensure consistency and actuality a number of fixes are applied on the raw source data
   # 1: PSI trends in energyitensity are applied to TRACCS car and trucks data [TRACCS data only available until 2010]
@@ -72,6 +77,11 @@ toolAdjustEnergyIntensity <- function(dt, regionTRACCS, TrendsEnIntPSI, filter, 
        value := value * 4.7 / 4.4]
   }
 
+  # 2b: India #plausibilityFix_IND
+  # Trucks, domestic aviation, cars, two-, three-wheelers and buses (Liquids, Gases); before step 3, as the
+  # hydrogen aircraft copies the liquids aircraft there
+  dt <- toolAdjustEnergyIntensityIndia(dt, step = "Liquids")
+
   # 3: Assume missing data
   # a) Hydrogen airplanes are not covered by our datasources
   # based on "A review on potential use of hydrogen in aviation applications", Dincer, 2016:
@@ -82,6 +92,7 @@ toolAdjustEnergyIntensity <- function(dt, regionTRACCS, TrendsEnIntPSI, filter, 
 
   # b) Alternative technologies for Busses are not covered by our sources
   ## Buses are assumed to have the same energy intensity as 18 tons truck
+  # IND cross-check: BEV 3.4 MJ/vehkm; CEEW (2025c) Table 2: electric bus 1.0 km/kWh = 3.6 MJ/vehkm (see 3g).
   alternativeBusTech <- dt[univocalName == "Truck (18t)" & technology %in% c("BEV", "FCEV")]
   alternativeBusTech[, univocalName := "Bus"]
   dt <- rbind(dt, alternativeBusTech)
@@ -131,10 +142,17 @@ toolAdjustEnergyIntensity <- function(dt, regionTRACCS, TrendsEnIntPSI, filter, 
 
   # g) Alternative technologies for Rickshaws are not covered by our sources
   # Rickshaws are assumed to have the same as Motorcycle (50-250cc) BEV
+  # IND cross-check: 0.21 MJ/vehkm (2010); CEEW (2025c) Table 2: electric passenger three-wheeler 15 km/kWh =
+  # 0.24 MJ/vehkm; 14% difference,kept for now
+  # SourceID: S26 (EDGETassumptions README.txt, section 8)
   alternativeRickshawTech <- dt[univocalName == "Motorcycle (50-250cc)" &
                                   technology %in% c("BEV") & region %in% dt[univocalName == "Rickshaw"]$region]
   alternativeRickshawTech[, univocalName := "Rickshaw"]
   dt <- rbind(dt, alternativeRickshawTech)
+
+  # h) BEV cars and two-wheelers in India #plausibilityFix_IND #plausibilityFix_Pass
+  # After 3g, so that the rickshaw keeps the motorcycle's BEV value from before this step.
+  dt <- toolAdjustEnergyIntensityIndia(dt, step = "BEV")
 
   # 4: adjustments for scenarioMIP validation: adjust outliers to global mean
   ISOcountriesMap <- system.file("extdata", "regionmappingISOto21to12.csv", package = "mrtransport", mustWork = TRUE)

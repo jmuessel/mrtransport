@@ -1,14 +1,23 @@
 #' Perform parameter specific adjustments on the input data
 #'
+#' Fills gaps in the raw historical energy service demand (GCAM, TRACCS, Eurostat) and corrects implausible values
+#' for single regions and modes.
 #'
-#' @author Johanna Hoppe
+#' @details India (IND), values by assumption ID from the EDGETassumptions source ([toolGetAssumption()])
+#' - Truck size split (step 3, A21): Vehicle shares derived from Indian stock and sales data replace previous
+#'   assumptions
+#' - All other adjustments (step 7): [toolAdjustEsDemandIndia()]
+#'
+#' @author Johanna Hoppe, Jarusch Muessel
 #' @param dt calculated raw data without adjustments
 #' @param mapIso2region map iso countries to regions
 #' @param completeData All combinations of region, period, univocalName and technology in EDGE-T decision tree
 #' @param filter list of filters for specific branches in the upper decision tree, containing all associated
-#' @param histSourceData the full source data containing the annual mileage and load factor
 #' univocalNames
-#' @return a quitte object
+#' @param histSourceData the full source data; annual mileage and load factor (2010 Liquids) turn the target
+#' truck vehicle shares of step 3 into tkm shares; energy intensity and load factor are used by
+#' [toolAdjustEsDemandIndia()]
+#' @return a quitte object with the adjusted energy service demand in billion pkm/yr and billion tkm/yr
 
 toolAdjustEsDemand <- function(dt, mapIso2region, completeData, filter, histSourceData) {
   variable <- period  <- unit <- value <-  demldv <- regionCode21 <- technology <- valueNew <- . <-
@@ -34,6 +43,7 @@ toolAdjustEsDemand <- function(dt, mapIso2region, completeData, filter, histSour
 
 
   # 2: Add some base demand for Cycle & Walk (2%)
+  # IND: not applied, as GCAM's walking and cycling are not zero (EDGETassumptions README, section 7)
   dt[, demldv := sum(value), by = c("period", "region")]
   dt[univocalName == "Cycle" & value == 0, value := demldv * 0.01]
   dt[univocalName == "Walk" & value == 0, value := demldv * 0.002]
@@ -42,35 +52,33 @@ toolAdjustEsDemand <- function(dt, mapIso2region, completeData, filter, histSour
   dt[, demldv := NULL]
 
 
-  # 3: Correct truck size ES splits for CHA and JPN
+  # 3: Correct truck size ES splits for CHN/HKG/MAC, JPN and IND
   # #plausibilityFix_CHN #plausibilityFix_JPN #plausibilityFix_IND #plausibilityFix_Truck #plausibilityFix_Freight
   #
   # Original GCAM input data has implausible truck size distributions:
   #   - CHN/HKG/MAC: 95% of ES in 0-3.5t trucks (should be ~64% per CEIC data)
   #   - JPN: 99.999% in 0-3.5t trucks (heavy-duty trucks essentially missing)
-  #   - IND: 55% in 0-3.5t trucks (should be ~35%) and 0% for Trucks between 7.5t and 40t (should be ~25%)
+  #   - IND: 55% in 0-3.5t trucks and 0% for Trucks between 7.5t and 40t
   #
   # Real-world target vehicle share (% of vehicle count, not % of tonne-km) used here:
   #   CHN/HKG/MAC: 0-3.5t=76%, 7.5t=13%, 18t=5%, 26t=3%, 40t=3%
   #   JPN:         0-3.5t=88%, 7.5t=9%,  18t=1%, 26t=1%, 40t=1%
-  #   IND:         0-3.5t=42%, 7.5t=29%, 18t=21%, 26t=6%, 40t=2%
+  #   IND:         A21 (see below)
   #
-  # These are compromise values: closer to real-world than GCAM defaults, but
+  # CHN/HKG/MAC and JPN: these are compromise values: closer to real-world than GCAM defaults, but
   # still producing reasonable 2010/2015 truck numbers given other input data
   # constraints. Should be updated to real-world values once other inputs improve.
   # Source can be found in:
   #   CEIC: https://www.ceicdata.com/en/china/no-of-motor-vehicle/cn-no-of-motor-vehicle-truck-heavy
   #   Data/RegionalData/compiling_CHA_data_heavy_duty_vehicles.xlsx (cells V17:V21, CHA)
   #   Also for Data/RegionalData/compiling_JPN_data_heavy_duty_vehicles.xlsx
-  #   India specific sources can be generally found in:
-  #   /p/projects/edget/adjustmentDataFiles/IND_validation/ValidationSheets/TrucksValidation.xlsx
-  #   Niti Aayog, RMI (2022): https://www.niti.gov.in/sites/default/files/2023-02/ZETReport09092022.pdf
-  #   Niti Aayog, RMI (2019): https://www.niti.gov.in/sites/default/files/2021-06/FreightReportNationalLevel.pdf
-  # Alternatively: /p/projects/edget/adjustmentDataFiles/IND_validation/additionalLiterature/FleetComposition
-
+  #
+  # A21 (IND): vehicle shares from Indian stock and sales data, 2020 values used for 2010
 
   REGIONS_TO_FIX <- c("CHN", "HKG", "MAC", "JPN", "IND")
   TRUCK_SIZES    <- c("Truck (0-3_5t)", "Truck (7_5t)", "Truck (18t)", "Truck (26t)", "Truck (40t)")
+  vehicleSharesIND <- toolGetAssumption("A21")[TRUCK_SIZES]
+  if (anyNA(vehicleSharesIND)) stop("IND truck vehicle shares (A21) are incomplete")
 
   # Step 1: Define target vehicle count shares by size
   # These are shares of *vehicle count*, not ES. ES shares are derived below
@@ -81,7 +89,7 @@ toolAdjustEsDemand <- function(dt, mapIso2region, completeData, filter, histSour
     value        = c(
       rep(c(76, 13, 5, 3, 3), 3),  # CHN, HKG, MAC
       c(88,  9, 1, 1, 1),       # JPN
-      c(40, 35, 12, 10, 3)     # IND
+      unname(vehicleSharesIND)  # IND (A21)
     )
   )
 
@@ -217,10 +225,10 @@ toolAdjustEsDemand <- function(dt, mapIso2region, completeData, filter, histSour
   dt[period <= 2010 & regionCode21 == "CHN" & univocalName %in% filter$trn_freight_road, value := value * 3]
 
   # 4: Demand level corrections, adjusting to ETP demands
-  # #plausibilityFix_CHN #plausibilityFix_Bus #plausibilityFix_Pass #plausibilityFix_IND
+  # #plausibilityFix_CHN #plausibilityFix_Bus #plausibilityFix_Pass
   # #plausibilityFix_OAS #plausibilityFix_NEU #plausibilityFix_MEA
+  # IND: the former factor 1/2 is replaced by the bus share in toolAdjustEsDemandIndia().
   dt[regionCode21 == "CHA" & univocalName == "Bus", value := value / 2.5]
-  dt[regionCode21 == "IND" & univocalName == "Bus", value := value / 2]
   dt[regionCode21 == "OAS" & univocalName == "Bus", value := value / 5]
   dt[regionCode12 == "NEU" & univocalName == "Bus", value := value / 2]
   dt[regionCode21 == "MEA" & univocalName == "Bus", value := value / 2]
@@ -238,23 +246,10 @@ toolAdjustEsDemand <- function(dt, mapIso2region, completeData, filter, histSour
   dt[region == "DEU" & univocalName %in% filter$trn_freight, value := value * 620 / 587]
   dt[, c("countryName", "regionCode21", "regionCode12", "check") := NULL]
 
-  # plausibilityFix_IND #plausibilityFix_Pass #plausibilityFix_Freight
-  # Scale India 2010 energy service demand up to plausible totals.
-  # Sources for the target values are:p/projects/edget/adjustmentDataFiles/IND_validation/July26/Literature
-  # /03_Paladugula.pdf and
-  # /10_ceewGCAM_outlook.pdf
-  # Note that I used the upper bound because our Energy Intensities beyond 2010 lead to higher FE than the IEA projects
-  # targetPassES2010    <- 5400   billion pkm
-  # targetFreightES2010 <- 2300   billion tkm
-  # pass_sm2010 <- dt[region == "IND" & period %in% c(2010) & univocalName %in% filter$trn_pass,
-  #   sum(value, na.rm = TRUE)]
-  # freight_sm2010 <- dt[region == "IND" & period %in% c(2010) & univocalName %in% filter$trn_freight,
-  #  sum(value, na.rm = TRUE)]
-
-  dt[region == "IND" & period %in% c(2005, 2010) & univocalName %in% filter$trn_pass,
-     value := value * 1.4] #targetPassES2010 / pass_sm2010]
-  dt[region == "IND" & period %in% c(2005, 2010) & univocalName %in% filter$trn_freight,
-     value := value * 1.4] #* targetFreightES2010 / freight_sm2010]
+  # 7: Historical activity in India (IND) #plausibilityFix_IND
+  # 2010 targets, bus technologies, 1990 road demand; the former factor 1.4 on all IND demand in 2005 and 2010
+  # is removed
+  dt <- toolAdjustEsDemandIndia(dt, filter, histSourceData)
 
   return(dt)
 }

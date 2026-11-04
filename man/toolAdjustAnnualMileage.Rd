@@ -17,11 +17,23 @@ univocalNames}
 \item{ariadneAdjustments}{switch on and off adjustments according to ARIADNE model intercomparison in 2022}
 }
 \value{
-a quitte object
+a quitte object with the adjusted annual mileage in vehicle-km per vehicle and year
 }
 \description{
-Perform parameter specific adjustments on the input data
+Fills gaps in the raw annual mileage (TRACCS, UCD) and sets values for single regions and modes.
+}
+\details{
+India (IND), values by assumption ID from the EDGETassumptions source (\code{\link[=toolGetAssumption]{toolGetAssumption()}})
+\itemize{
+\item Trucks (step 2c, A07): Means of published Indian fleet values replace previous specific assumptions and global
+benchmarks (2b)
+\item Cars (after step 3a, A08): one value for all car classes, derived from pkm per car and year and the car load
+factor (A04). Previous estimates resulted in 2010 car stock well above literature values.
+\item Passenger three-wheelers ("Rickshaw", step 2a, A06): mean of TERI & CEEW
+\item Status, derivation and sources of each value are in the table, references and PDF paths in README.txt of the
+source.
+}
 }
 \author{
-Johanna Hoppe
+Johanna Hoppe, Jarusch Muessel
 }

@@ -25,11 +25,16 @@ univocalNames}
 \item{ariadneAdjustments}{optional parameter adjustements according to ARIADNE model intercomparison in 2022}
 }
 \value{
-a quitte object
+a quitte object with the adjusted raw energy intensities in MJ/vehkm, from 2005 on (earlier years are
+set to the 2005 values in step 5)
 }
 \description{
-Perform parameter specific adjustments on the input data
+Applies trends, corrections and gap fills to the raw energy intensities (TRACCS, GCAM, PSI) and sets values for
+single regions and modes.
+}
+\details{
+India (IND): steps 2b and 3h call \code{\link[=toolAdjustEnergyIntensityIndia]{toolAdjustEnergyIntensityIndia()}}, which documents the assumptions.
 }
 \author{
-Johanna Hoppe
+Johanna Hoppe, Jarusch Muessel
 }

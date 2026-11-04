@@ -24,8 +24,17 @@ containing all associated univocalNames}
 a quitte object
 }
 \description{
-Perform parameter specific adjustments on the input data
+Fills gaps in the raw CAPEX of vehicle types without fleet tracking and sets values for single regions and modes.
+}
+\details{
+India (IND), values by assumption ID from the EDGETassumptions source (\code{\link[=toolGetAssumption]{toolGetAssumption()}})
+\itemize{
+\item Passenger three-wheelers ("Rickshaw", step 5, A09): Liquids from UCD's Indian three-wheeler (toolPrepareUCD());
+BEV = Liquids x BEV/ICE price ratio from CEEW (2025c), before 2024 following UCD's Indian motorcycles
+\item Status, derivation and sources of each value are in the table, references and PDF paths in README.txt of the
+source.
+}
 }
 \author{
-Johanna Hoppe
+Johanna Hoppe, Jarusch Muessel
 }

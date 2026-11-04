@@ -20,7 +20,9 @@ toolPrepareGCAM <- function(x, subtype) {
   mappingGCAMraw <- fread(mapfile)
 
   # make mapping region specific and add additional mapping assumptions:
-  # introduce Rickshaws to "IND"
+  # introduce Rickshaws to "IND" #plausibilityFix_IND #plausibilityFix_Pass
+  # Note: Rickshaw has no Gases technology, so GCAM's CNG three-wheelers count as Liquids (as in
+  # mappingGCAMtoEDGET.csv); for IND they are 33 % of three-wheeler pkm in 2010 and matched against IEA liquids
   regions <- unique(dt$region)
   mappingGCAM <- mappingGCAMraw[rep(seq_len(.N), times = length(regions))]
   mappingGCAM[, region := rep(regions, each = nrow(mappingGCAMraw))]
