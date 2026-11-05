@@ -17,11 +17,24 @@ toolAdjustLoadFactor(dt, completeData, TRACCScountries, filter)
 univocalNames}
 }
 \value{
-a quitte object
+a quitte object with the adjusted load factors in p/veh (passenger modes) and t/veh (freight modes)
 }
 \description{
-Perform parameter specific adjustments on the input data
+Corrects and fills gaps in the raw load factors (TRACCS, GCAM) and sets values for single regions and modes.
+}
+\details{
+India (IND), values by assumption ID from the EDGETassumptions source (\code{\link[=toolGetAssumption]{toolGetAssumption()}})
+\itemize{
+\item Trucks (step 4, A01): Payloads net of empty running from Indian survey data replace the global values
+\item Passenger three-wheelers ("Rickshaw", step 5, A02): survey occupancy of TERI minus an assumed share of empty
+driving
+\item Buses (step 6, A03): passenger-km per bus-km of the State Road Transport Undertakings (MoRTH)
+\item Cars and two-wheelers (step 7, A04, A05): one value for all car classes (GCAM's class values raised the mean
+with the SUV share) and one for two-wheelers, Indian survey values
+\item Status, derivation and sources of each value are in the table, references and PDF paths in README.txt of the
+source.
+}
 }
 \author{
-Johanna Hoppe
+Johanna Hoppe, Jarusch Muessel
 }

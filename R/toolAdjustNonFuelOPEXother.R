@@ -1,7 +1,15 @@
 #' Perform parameter specific adjustments on the input data
 #'
+#' Fills gaps in the raw non-fuel OPEX of vehicle types without fleet tracking and sets values for single regions and
+#' modes.
 #'
-#' @author Johanna Hoppe
+#' @details India (IND), values by assumption ID from the EDGETassumptions source ([toolGetAssumption()])
+#' - Passenger three-wheelers ("Rickshaw", step 4, A09-A12): Liquids from UCD's Indian three-wheeler
+#'   (toolPrepareUCD()); BEV = Liquids x EV/ICE ratio of maintenance plus insurance from CEEW (2025c)
+#' - Status, derivation and sources of each value are in the table, references and PDF paths in README.txt of the
+#'   source.
+#'
+#' @author Johanna Hoppe, Jarusch Muessel
 #' @param dt calculated raw data without adjustments
 #' @param ISOcountries list of iso countries
 #' @param yrs temporal resolution of EDGE-T model
@@ -14,7 +22,7 @@
 
 toolAdjustNonFuelOPEXother <- function(dt, ISOcountries, yrs, completeData, filter) {
   value <- . <- region  <- univocalName <- check <- unit  <- variable <-
-    period <- technology <- NULL
+    period <- technology <- liquids <- NULL
 
   # 1: Aggregate different non fuel OPEX types
   dt <- dt[, .(value = sum(value)), by = c("region", "period", "univocalName", "technology", "unit")]
@@ -105,12 +113,21 @@ toolAdjustNonFuelOPEXother <- function(dt, ISOcountries, yrs, completeData, filt
   missingMoped[, value := twoW50][, twoW50 := NULL]
   missingMoped[is.na(value), value := twoW250][, twoW250 := NULL]
 
-  missing3W <- merge.data.table(missing3W, twoW250, by = c("region", "technology", "period"), all.x = TRUE)
-  missing3W <- merge.data.table(missing3W, twoW50, by = c("region", "technology", "period"), all.x = TRUE)
-  missing3W <- merge.data.table(missing3W, twoWmoped, by = c("region", "technology", "period"), all.x = TRUE)
-  missing3W[, value := twoW250][, twoW250 := NULL]
-  missing3W[is.na(value), value := twoW50][, twoW50 := NULL]
-  missing3W[is.na(value), value := twoWmoped][, twoWmoped := NULL]
+  # Rickshaw (passenger three-wheelers, IND only) #plausibilityFix_IND #plausibilityFix_Pass
+  # A09-A12: BEV = Liquids (UCD) x EV/ICE ratio of maintenance plus insurance per km (CEEW), all years
+  ceewMaintenance <- c(EV = toolGetAssumption("A10", technology = "BEV")[["Rickshaw"]],
+                       ICE = mean(toolGetAssumption("A10", by = "variable", technology = "Liquids")))   # in INR/km
+  ceewInsurance <- toolGetAssumption("A11")[["Rickshaw"]] *
+    c(EV = toolGetAssumption("A09", by = "period", technology = "BEV")[["2024"]],
+      ICE = mean(toolGetAssumption("A09", by = "variable", technology = "Liquids"))) *
+    1e5 / toolGetAssumption("A12")[["Rickshaw"]]                                                         # in INR/km
+  ceewOPEX <- ceewMaintenance + ceewInsurance
+  ratio3W <- ceewOPEX[["EV"]] / ceewOPEX[["ICE"]]
+  liquids3W <- dt[univocalName == "Rickshaw" & technology == "Liquids", .(region, period, technology = "BEV",
+                                                                          liquids = value)]
+  missing3W <- merge.data.table(missing3W, liquids3W, by = c("region", "technology", "period"), all.x = TRUE)
+  missing3W[, value := liquids * ratio3W][, liquids := NULL]
+  if (anyNA(missing3W$value)) stop("Rickshaw non-fuel OPEX: Liquids are missing")
 
 
   missing2_3W <- rbind(missing50, missing250, missingMoped, missing3W)

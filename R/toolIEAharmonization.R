@@ -24,13 +24,13 @@ toolIEAharmonization <- function(...) {
 
   IEAbal <-  magpie2dt(IEAbalMag, datacols = c("se", "fe", "te", "mod", "flow"),
                        regioncol = "region", yearcol = "period")
-  IEAbal <- IEAbal[te != "dot"]  #delete fedie.dot #Q: what is fedie.dot?
   setnames(IEAbal, "value", "feIEA")
 
   # As freight and passenger are not seperated in IEA energy balances harmonize by "short-medium",
   # "MARBUNK" (eq. to shipping international) and "AVBUNK" (eq. to aviation international) and technology (te)
   IEAbal[, isBunk := ifelse(grepl("BUNK", flow), flow, "short-medium")]
   IEAbal[, c("se", "fe", "mod", "flow") := NULL]
+
   # sum fossil liquids and biofuel to tdlit, and biogas and natural gas to tdgat
   IEAbal[te %in% c("tdfospet", "tdfosdie", "tdbiopet", "tdbiodie"), te := "tdlit"]
   IEAbal[te %in% c("tdfosgat", "tdbiogat"), te := "tdgat"]

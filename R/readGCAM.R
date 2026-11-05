@@ -12,7 +12,7 @@
 #' @seealso [madrat::readSource()]
 #' @import data.table
 #' @importFrom magclass as.magpie
-#' @importFrom magrittr `%>%`
+#'
 readGCAM <- function(subtype = c("energyIntensity",  "loadFactor", "histESdemand", "speedMotorized",
                                  "speedNonMotorized", "valueOfTimeMultiplier")) {
 

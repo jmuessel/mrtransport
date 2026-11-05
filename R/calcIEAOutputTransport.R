@@ -9,20 +9,19 @@
 #' @return IEA data as MAgPIE object aggregated to country level
 #' @author Falk Benke
 #'
-#' @importFrom rlang .data
 #' @importFrom magclass getNames getNames<- setNames dimSums mbind
 #'
 calcIEAOutputTransport <- function() {
 
-  # read in data and convert from ktoe to EJ
-  data <- readSource("IEA", subtype = "EnergyBalances") * 4.1868e-5
+  data <- calcOutput("IeaEnergyBalances", ieaVersion = "default", aggregate = FALSE)
 
   ieamatch <- toolGetMapping(type = "sectoral", name = "structuremappingIO_outputs.csv",
-                             where = "mrcommonsenergy")
+                             where = "mrcommonsenergy", returnPathOnly = TRUE)
 
   target <- c("REMINDitems_in", "REMINDitems_out", "REMINDitems_tech", "iea_product", "iea_flows")
 
   ieamatch <- ieamatch %>%
+    read.csv2(stringsAsFactors = FALSE, na.strings = "") %>%
     dplyr::select(tidyselect::all_of(c("iea_product", "iea_flows", "Weight", target))) %>%
     stats::na.omit() %>%
     # select only fuel types that are represented in EDGE-T
@@ -60,6 +59,6 @@ calcIEAOutputTransport <- function() {
 
   return(list(
     x = reminditems, weight = NULL, unit = "EJ",
-    description = "IEA SE Output Data based on 2022 edition of IEA World Energy Balances"
+    description = "IEA SE Output Data based on 2024 edition of IEA World Energy Balances"
   ))
 }

@@ -248,7 +248,7 @@ calcEdgeTransportSAinputs <- function(subtype, SSPscen = "SSP2", IEAharm = TRUE)
       loadFactor <- magpie2dt(calcOutput(type = "EdgeTransportSAinputs", subtype = "loadFactor",
                                          warnNA = FALSE, aggregate = FALSE))
       annualMileage <- magpie2dt(calcOutput(type = "EdgeTransportSAinputs", subtype = "annualMileage",
-                                         warnNA = FALSE, aggregate = FALSE))
+                                            warnNA = FALSE, aggregate = FALSE))
 
       # Inter- and extrapolate all data to model input data years
       data <- list(esDemandGCAM     = esDemandGCAM,
@@ -554,17 +554,13 @@ calcEdgeTransportSAinputs <- function(subtype, SSPscen = "SSP2", IEAharm = TRUE)
       lifeTime <- 15    #Number of years over which vehicle capital payments are amortized
       annuityFactor <- (discountRate * (1 + discountRate) ^ lifeTime) / ((1 + discountRate) ^ lifeTime - 1)
 
-      AMUCD2W <- toolPrepareUCD(readSource("UCD", "annualMileage"), "annualMileage")
-      AMUCD2W <- AMUCD2W[univocalName %in% filterEntries$trn_pass_road_LDV_2W]
-      AMUCD2W <- AMUCD2W[, c("region", "univocalName", "technology", "period", "value")]
-      AMUCD2W <- approx_dt(AMUCD2W, lowResYears, "period", "value", c("region", "technology", "univocalName"),
-                           extrapolate = TRUE)
-      setnames(AMUCD2W, "value", "annualMileage")
+      # Two- and three-wheelers: per vehicle to per vkm (see toolGetAnnualMileage2W3W())
+      perVehicle <- c(filterEntries$trn_pass_road_LDV_2W, filterEntries$trn_pass_road_LDV_3W)
 
-      CAPEXUCD <- merge.data.table(data$CAPEXUCD, AMUCD2W, by = c("region", "univocalName", "technology", "period"),
-                                   all.x = TRUE)
-      CAPEXUCD[univocalName %in% filterEntries$trn_pass_road_LDV_2W, value := (value * annuityFactor) / annualMileage]
-      CAPEXUCD[univocalName %in% filterEntries$trn_pass_road_LDV_2W,
+      CAPEXUCD <- merge.data.table(data$CAPEXUCD, toolGetAnnualMileage2W3W(filterEntries, lowResYears),
+                                   by = c("region", "univocalName", "technology", "period"), all.x = TRUE)
+      CAPEXUCD[univocalName %in% perVehicle, value := (value * annuityFactor) / annualMileage]
+      CAPEXUCD[univocalName %in% perVehicle,
                unit := paste0(monUnit, "/vehkm")][, annualMileage := NULL]
 
       # merge.data.table data
@@ -654,17 +650,11 @@ calcEdgeTransportSAinputs <- function(subtype, SSPscen = "SSP2", IEAharm = TRUE)
 
       # Data for two wheelers is given in US$/veh and needs to be converted to US$/vehkm
       # with the help of annual mileage
-      AMUCD2W <- toolPrepareUCD(readSource("UCD", "annualMileage"), "annualMileage")
-      AMUCD2W <- AMUCD2W[univocalName %in% filterEntries$trn_pass_road_LDV_2W]
-      AMUCD2W <- AMUCD2W[, c("region", "univocalName", "technology", "period", "value")]
-      AMUCD2W <- approx_dt(AMUCD2W, lowResYears, "period", "value", c("region", "univocalName", "technology"),
-                           extrapolate = TRUE)
-      setnames(AMUCD2W, "value", "annualMileage")
-      nonFuelOPEXUCD <- merge.data.table(data$nonFuelOPEXUCD, AMUCD2W, by = c("region", "period",
-                                                                              "univocalName", "technology"),
-                                         all.x = TRUE)
-      nonFuelOPEXUCD[univocalName %in% filterEntries$trn_pass_road_LDV_2W, value := value / annualMileage]
-      nonFuelOPEXUCD[univocalName %in% filterEntries$trn_pass_road_LDV_2W,
+      perVehicle <- c(filterEntries$trn_pass_road_LDV_2W, filterEntries$trn_pass_road_LDV_3W)
+      nonFuelOPEXUCD <- merge.data.table(data$nonFuelOPEXUCD, toolGetAnnualMileage2W3W(filterEntries, lowResYears),
+                                         by = c("region", "period", "univocalName", "technology"), all.x = TRUE)
+      nonFuelOPEXUCD[univocalName %in% perVehicle, value := value / annualMileage]
+      nonFuelOPEXUCD[univocalName %in% perVehicle,
                      unit := paste0(monUnit, "/vehkm")][, annualMileage := NULL]
 
       # merge.data.table data

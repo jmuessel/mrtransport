@@ -22,6 +22,14 @@ toolPrepareUCD <- function(x, subtype) {
 
   #make mapping region specific and add additional mapping assumptions:
   #introduce Rickshaws to "IND" if UCD values are being used
+  # Rickshaw (passenger three-wheelers, IND only) #plausibilityFix_IND #plausibilityFix_Pass
+  # CAPEX and non-fuel OPEX from UCD's Indian three-wheeler rows (LDV_3W), unmapped in mappingUCDtoEDGET.csv
+  # Published (UCD database, all years): CAPEX 2,892 (Liquids) and 3,294 (NG) US$2017 per vehicle (FE-weighted:
+  # 2,960), non-fuel OPEX 163 US$2017 per vehicle and year
+  # CNG three-wheelers count as Liquids, as Rickshaw has no Gases technology (as in toolPrepareGCAM())
+  # Note: Cost subtypes only; energy intensity, load factor and annual mileage of Rickshaw stay with GCAM and
+  # toolAdjustAnnualMileage(). Other regions' three-wheelers stay unmapped.
+  rickshawIND <- subtype %in% c("CAPEX", "nonFuelOPEX")
   mappingUCD <- mappingUCDraw
 
   weight <- readSource("UCD", subtype = "feDemand")
@@ -44,6 +52,9 @@ toolPrepareUCD <- function(x, subtype) {
                      "CAPEXandNonFuelOPEX", "OperatingSubsidies")) {
     dt <- merge.data.table(dt, weight, all.x = TRUE)
     dt <- merge.data.table(dt, mappingUCD, all.x = TRUE)
+    if (rickshawIND) {
+      dt[region == "IND" & mode == "LDV_3W", c("univocalName", "technology") := list("Rickshaw", "Liquids")]
+    }
     dt <- dt[!univocalName == ""]
     dt <- unique(dt[, .(value = sum(value * fe) / sum(fe)),
                     c("region", "period", "univocalName", "technology", "variable", "unit")])

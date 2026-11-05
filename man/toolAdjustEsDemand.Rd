@@ -13,17 +13,28 @@ toolAdjustEsDemand(dt, mapIso2region, completeData, filter, histSourceData)
 
 \item{completeData}{All combinations of region, period, univocalName and technology in EDGE-T decision tree}
 
-\item{filter}{list of filters for specific branches in the upper decision tree, containing all associated}
-
-\item{histSourceData}{the full source data containing the annual mileage and load factor
+\item{filter}{list of filters for specific branches in the upper decision tree, containing all associated
 univocalNames}
+
+\item{histSourceData}{the full source data; annual mileage and load factor (2010 Liquids) turn the target
+truck vehicle shares of step 3 into tkm shares; energy intensity and load factor are used by
+\code{\link[=toolAdjustEsDemandIndia]{toolAdjustEsDemandIndia()}}}
 }
 \value{
-a quitte object
+a quitte object with the adjusted energy service demand in billion pkm/yr and billion tkm/yr
 }
 \description{
-Perform parameter specific adjustments on the input data
+Fills gaps in the raw historical energy service demand (GCAM, TRACCS, Eurostat) and corrects implausible values
+for single regions and modes.
+}
+\details{
+India (IND), values by assumption ID from the EDGETassumptions source (\code{\link[=toolGetAssumption]{toolGetAssumption()}})
+\itemize{
+\item Truck size split (step 3, A21): Vehicle shares derived from Indian stock and sales data replace previous
+assumptions
+\item All other adjustments (step 7): \code{\link[=toolAdjustEsDemandIndia]{toolAdjustEsDemandIndia()}}
+}
 }
 \author{
-Johanna Hoppe
+Johanna Hoppe, Jarusch Muessel
 }

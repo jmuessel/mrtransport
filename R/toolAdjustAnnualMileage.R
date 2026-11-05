@@ -1,13 +1,23 @@
 #' Perform parameter specific adjustments on the input data
 #'
+#' Fills gaps in the raw annual mileage (TRACCS, UCD) and sets values for single regions and modes.
 #'
-#' @author Johanna Hoppe
+#' @details India (IND), values by assumption ID from the EDGETassumptions source ([toolGetAssumption()])
+#' - Trucks (step 2c, A07): Means of published Indian fleet values replace previous specific assumptions and global
+#'   benchmarks (2b)
+#' - Cars (after step 3a, A08): one value for all car classes, derived from pkm per car and year and the car load
+#'   factor (A04). Previous estimates resulted in 2010 car stock well above literature values.
+#' - Passenger three-wheelers ("Rickshaw", step 2a, A06): mean of TERI & CEEW
+#' - Status, derivation and sources of each value are in the table, references and PDF paths in README.txt of the
+#'   source.
+#'
+#' @author Johanna Hoppe, Jarusch Muessel
 #' @param dt calculated raw data without adjustments
 #' @param completeData All combinations of region, period, univocalName and technology in EDGE-T decision tree
 #' @param filter list of filters for specific branches in the upper decision tree, containing all associated
 #' univocalNames
 #' @param ariadneAdjustments switch on and off adjustments according to ARIADNE model intercomparison in 2022
-#' @return a quitte object
+#' @return a quitte object with the adjusted annual mileage in vehicle-km per vehicle and year
 
 toolAdjustAnnualMileage <- function(dt, completeData, filter, ariadneAdjustments = TRUE) {
   region <- value <- univocalName <- check <- unit <- variable <- annualMileage <- period <- technology <- meanValue <-
@@ -59,15 +69,13 @@ toolAdjustAnnualMileage <- function(dt, completeData, filter, ariadneAdjustments
   dt[, value := ifelse(is.na(value), mean(value, na.rm = TRUE), value),
      by = c("period", "technology", "univocalName")]
 
-  # Missing Rickshaw data in India, assumption: 25k km/yr based on CEEW (30k in Table3)
-  # And that E-Ricksaws might have a lower annual mileage
-  # CEEW (2025): ceew.in/sites/default/files/cost-of-ownership-for-different-vehicle-segments-fuels-and-powertrains.pdf
-  # Also: edget/adjustmentDataFiles/IND_validation/additionalLiterature/AnnualMileage/3W_AnnualMileage_CEEW_India.pdf
-  dt[region == "IND" & univocalName == "Rickshaw", value := 25000]
+  # Rickshaw (passenger three-wheelers, IND only) #plausibilityFix_IND #plausibilityFix_Pass
+  # A06: mean of published daily distances (TERI, CEEW) for 330 operating days, all technologies and years
+  dt[region == "IND" & univocalName == "Rickshaw", value := toolGetAssumption("A06")[["Rickshaw"]]]
   dt <- dt[period <= 2010, value := value[period == 2010], by = .(region, univocalName, variable, technology)]
 
   # b) Annual Mileage for Trucks is missing completely - insert assumptions made by Alois in 2022
-  # (probably from ARIADNE)
+  # (probably from ARIADNE). IND: overwritten in c).
   annualMileageTrucks <- fread(
                                text = "univocalName, annualMileage
               Truck (0-3_5t), 21500
@@ -80,17 +88,11 @@ toolAdjustAnnualMileage <- function(dt, completeData, filter, ariadneAdjustments
   dt <- merge.data.table(dt, annualMileageTrucks, by = "univocalName", all.x = TRUE, allow.cartesian = TRUE)
   dt[, value := ifelse(!is.na(annualMileage), annualMileage, value)][, annualMileage := NULL]
 
-  # c) New adjustments for Trucks in India based analysis in /p/projects/edget/adjustmentDataFiles/IND_validation
-  # Sources for light-medium trucks: CSTEP: 50k, ICCT: 30-70k (RM1-3 trucks), Phadke et al. 2019: 50k km/yr
-  # Assumptions: 7_5t: 45k km/yr, 18t 60k km/yr
-  # CSTEP: hhtps://cstep.in/wp-content/uploads/2025/09/Heavy-duty-high-impact_Mitigating-heavy-commercial-vehicle
-  # ICCT: https://theicct.org/wp-content/uploads/2023/06/India-HDT-fuel-efficiency_FINAL.pdf
-  # Phadke: https://eta-publications.lbl.gov/sites/default/files/electric_trucks_in_india_-_final_nov7.pdf
-  # also stored in: /p/projects/edget/adjustmentDataFiles/IND_validation/additionalLiterature/AnnualMileage
-
-
-  anMilChangesIND <- c("Truck (7_5t)" = 45000, "Truck (18t)" = 60000)
-  dt[region == "IND" & univocalName %in% names(anMilChangesIND), value := anMilChangesIND[univocalName]]
+  # c) Trucks in India #plausibilityFix_IND #plausibilityFix_Truck #plausibilityFix_Freight
+  # A07: means of published Indian fleet values per class, 2020 values used for all years and technologies
+  AMChangesIND <- toolGetAssumption("A07")[filter$trn_freight_road]
+  if (anyNA(AMChangesIND)) stop("IND truck annual mileages (A07) are incomplete")
+  dt[region == "IND" & univocalName %in% names(AMChangesIND), value := AMChangesIND[univocalName]]
 
   # d) We do not have vintage tracking for the rest of the modes -> insert zeros
   # Later on it would be great to top up this data
@@ -115,6 +117,11 @@ toolAdjustAnnualMileage <- function(dt, completeData, filter, ariadneAdjustments
        grepl("Bus", univocalName), value := meanValue]
 
   dt[, meanValue := NULL]
+
+  # Cars in India #plausibilityFix_IND #plausibilityFix_Pass
+  # A08: pkm per car and year / car load factor (A04), all classes and technologies; after 3a) to keep its means
+  dt[region == "IND" & univocalName %in% filter$trn_pass_road_LDV_4W,
+     value := toolGetAssumption("A08")[["trn_pass_road_LDV_4W"]]]
 
   # b) data until 2010 has weird spikes for some regions -> remove data between 1991 and 2009
   # and interpolate afterward to remove the spikes

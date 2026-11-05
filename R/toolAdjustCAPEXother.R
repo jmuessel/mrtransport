@@ -1,7 +1,14 @@
 #' Perform parameter specific adjustments on the input data
 #'
+#' Fills gaps in the raw CAPEX of vehicle types without fleet tracking and sets values for single regions and modes.
 #'
-#' @author Johanna Hoppe
+#' @details India (IND), values by assumption ID from the EDGETassumptions source ([toolGetAssumption()])
+#' - Passenger three-wheelers ("Rickshaw", step 5, A09): Liquids from UCD's Indian three-wheeler (toolPrepareUCD());
+#'   BEV = Liquids x BEV/ICE price ratio from CEEW (2025c), before 2024 following UCD's Indian motorcycles
+#' - Status, derivation and sources of each value are in the table, references and PDF paths in README.txt of the
+#'   source.
+#'
+#' @author Johanna Hoppe, Jarusch Muessel
 #' @param dt calculated raw data without adjustments
 #' @param ISOcountries list of iso countries
 #' @param yrs temporal resolution of EDGE-T model
@@ -15,7 +22,7 @@
 
 toolAdjustCAPEXother <- function(dt, ISOcountries, yrs, completeData, GDPpcMER, filter) {
   variable <- . <- value     <- technology <- gdppc <-
-    period <- region <- univocalName <- unit <- check  <- NULL
+    period <- region <- univocalName <- unit <- check  <- ratio2W <- ratio2W2024 <- ratio <- liquids <- NULL
 
   # 1: Aggregate different CAPEX types
   dt <- dt[, .(value = sum(value)), by = c("region",  "period", "univocalName", "technology",  "unit")]
@@ -109,12 +116,24 @@ toolAdjustCAPEXother <- function(dt, ISOcountries, yrs, completeData, GDPpcMER, 
   missingMoped[, value := twoW50][, twoW50 := NULL]
   missingMoped[is.na(value), value := twoW250][, twoW250 := NULL]
 
-  missing3W <- merge.data.table(missing3W, twoW250, by = c("region", "technology", "period"), all.x = TRUE)
-  missing3W <- merge.data.table(missing3W, twoW50, by = c("region", "technology", "period"), all.x = TRUE)
-  missing3W <- merge.data.table(missing3W, twoWmoped, by = c("region", "technology", "period"), all.x = TRUE)
-  missing3W[, value := twoW250][, twoW250 := NULL]
-  missing3W[is.na(value), value := twoW50][, twoW50 := NULL]
-  missing3W[is.na(value), value := twoWmoped][, twoWmoped := NULL]
+  # Rickshaw (passenger three-wheelers, IND only) #plausibilityFix_IND #plausibilityFix_Pass
+  # A09: BEV = Liquids (UCD) x EV/mean ICE price, linear 2024-2030; before 2024 UCD's Indian motorcycle ratio
+  ceew3W <- toolGetAssumption("A09", by = "period", technology = "BEV") /
+    mean(toolGetAssumption("A09", by = "variable", technology = "Liquids"))
+  ratio3W <- twoW50[region %in% missing3W$region,
+                    .(ratio2W = twoW50[technology == "BEV"] / twoW50[technology == "Liquids"]),
+                    by = c("region", "period")]
+  ratio3W[, ratio2W2024 := stats::approx(period, ratio2W, xout = 2024)$y, by = "region"]
+  ratio3W[, ratio := ifelse(period < 2024, ceew3W[["2024"]] * ratio2W / ratio2W2024,
+                            stats::approx(c(2024, 2030), ceew3W[c("2024", "2030")],
+                                          xout = pmin(pmax(period, 2024), 2030))$y)]
+  ratio3W <- ratio3W[, .(region, period, technology = "BEV", ratio)]
+  liquids3W <- dt[univocalName == "Rickshaw" & technology == "Liquids", .(region, period, technology = "BEV",
+                                                                          liquids = value)]
+  missing3W <- merge.data.table(missing3W, ratio3W, by = c("region", "technology", "period"), all.x = TRUE)
+  missing3W <- merge.data.table(missing3W, liquids3W, by = c("region", "technology", "period"), all.x = TRUE)
+  missing3W[, value := liquids * ratio][, c("liquids", "ratio") := NULL]
+  if (anyNA(missing3W$value)) stop("Rickshaw CAPEX: Liquids or the BEV ratio are missing")
 
   missing2_3W <- rbind(missing50, missing250, missingMoped, missing3W)
   missing2_3W[, unit := unique(dt[!(is.na(value))]$unit)][, variable := "Capital costs (total)"]
